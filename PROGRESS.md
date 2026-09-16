@@ -12,6 +12,7 @@
 - [x] Live safe mode com lembretes históricos e guardrails Riot na UI/documentação.
 - [x] Testes básicos de matcher e safe mode.
 - [x] Logs locais para diagnostics e bridge Tauri para enumerar vídeos Outplayed.
+- [x] Rust/MSVC instalados neste ambiente; instaladores Windows `.msi` e `.exe` gerados.
 
 ## Próximos marcos
 
