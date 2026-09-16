@@ -2,11 +2,11 @@
 
 use std::path::PathBuf;
 use tauri::{Manager, State};
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result as SqlResult};
 
 struct AppState { db_path: PathBuf }
 
-fn connection(state: &AppState) -> Result<Connection> {
+fn connection(state: &AppState) -> SqlResult<Connection> {
     let conn = Connection::open(&state.db_path)?;
     conn.execute_batch(include_str!("../../migrations/001_initial.sql"))?;
     Ok(conn)
