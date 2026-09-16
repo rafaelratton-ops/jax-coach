@@ -4,6 +4,10 @@ dist/
 .env.*
 !.env.example
 src-tauri/target/
+src-tauri/gen/
+work/
+outputs/*.exe
+outputs/*.msi
 *.db
 *.db-shm
 *.db-wal
