@@ -6,6 +6,8 @@ Coach pessoal local-first para League of Legends, inicialmente focado em Jax na 
 
 Esta primeira entrega já é demonstrável sem League of Legends, chave Riot ou chave de IA. O dashboard usa fixtures realistas, o histórico simula fatos de Timeline, e a associação de gravações mostra como o Outplayed pode ser relacionado a uma partida por horário/duração.
 
+Na versão desktop, Configurações agora tem o Riot ID padrão `Pula Nuvem#Hope` e um campo temporário para a chave de desenvolvimento. O botão “Testar e sincronizar 5 partidas” chama a Riot pelo shell Tauri e não persiste a chave.
+
 ### Arquitetura
 
 ```text
@@ -95,6 +97,7 @@ Não havia credencial/autorização de GitHub/GitLab disponível no ambiente des
 - `src/app/App.tsx` — telas e fluxo principal.
 - `src/domain/` — tipos, fixtures, análise, safe mode e matcher.
 - `src/services/` — storage, diagnostics e pipeline de gravações.
+- `src/services/riotApi.ts` — contrato de sincronização Riot via comando Tauri local.
 - `src/services/logger.ts` — logs locais rotacionados (últimos 200 eventos) para diagnostics.
 - `src-tauri/` — shell desktop Windows e comandos SQLite iniciais.
 - `migrations/` — schema SQLite versionado.

@@ -13,6 +13,7 @@
 - [x] Testes básicos de matcher e safe mode.
 - [x] Logs locais para diagnostics e bridge Tauri para enumerar vídeos Outplayed.
 - [x] Rust/MSVC instalados neste ambiente; instaladores Windows `.msi` e `.exe` gerados.
+- [x] Riot ID configurável e comando Tauri de sincronização de partidas via Riot API.
 
 ## Próximos marcos
 

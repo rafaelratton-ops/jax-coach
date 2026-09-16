@@ -61,6 +61,8 @@ export interface SafeModeSettings {
 }
 
 export interface AppSettings {
+  riotGameName: string
+  riotTagLine: string
   outplayedDirectory: string
   riotRegion: string
   riotApiConfigured: boolean

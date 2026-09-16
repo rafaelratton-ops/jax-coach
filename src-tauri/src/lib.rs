@@ -3,13 +3,37 @@
 use std::path::PathBuf;
 use tauri::{Manager, State};
 use rusqlite::{Connection, Result as SqlResult};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 struct AppState { db_path: PathBuf }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RecordingCandidate { path: String, started_at: String, duration_seconds: u64, size_bytes: u64, confidence: f32, reason: String, extension: String }
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotAccount { puuid: String, game_name: String, tag_line: String }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotMatchResponse { info: RiotMatchInfo }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotMatchInfo { game_start_timestamp: i64, game_duration: u64, queue_id: u64, participants: Vec<RiotParticipant> }
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotParticipant { puuid: String, champion_name: String, team_position: String, team_id: u64, win: bool, kills: u64, deaths: u64, assists: u64, total_minions_killed: u64, neutral_minions_killed: u64 }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotMatchSummary { id: String, started_at: String, duration_seconds: u64, queue: String, champion: String, role: String, opponent: String, result: String, kda: String, cs: u64, source: String, analyzed: bool }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RiotSyncResult { account: RiotAccount, matches: Vec<RiotMatchSummary>, synced_at: String }
 
 fn connection(state: &AppState) -> SqlResult<Connection> {
     let conn = Connection::open(&state.db_path)?;
@@ -52,6 +76,28 @@ fn scan_outplayed_directory(directory: String) -> Result<Vec<RecordingCandidate>
     Ok(found)
 }
 
+#[tauri::command]
+async fn riot_sync_matches(game_name: String, tag_line: String, api_key: String, count: u8) -> Result<RiotSyncResult, String> {
+    if api_key.trim().is_empty() { return Err("Chave Riot vazia".to_string()); }
+    let client = reqwest::Client::new();
+    let account_url = format!("https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}", urlencoding::encode(&game_name), urlencoding::encode(&tag_line));
+    let account: RiotAccount = client.get(account_url).header("X-Riot-Token", &api_key).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())?;
+    let safe_count = count.clamp(1, 10);
+    let ids_url = format!("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?start=0&count={}", account.puuid, safe_count);
+    let ids: Vec<String> = client.get(ids_url).header("X-Riot-Token", &api_key).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())?;
+    let mut matches = Vec::new();
+    for id in ids {
+        let match_url = format!("https://americas.api.riotgames.com/lol/match/v5/matches/{}", id);
+        let payload: RiotMatchResponse = client.get(match_url).header("X-Riot-Token", &api_key).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?.json().await.map_err(|e| e.to_string())?;
+        if let Some(player) = payload.info.participants.iter().find(|participant| participant.puuid == account.puuid) {
+            let opponent = payload.info.participants.iter().find(|participant| participant.team_id != player.team_id).map(|participant| participant.champion_name.clone()).unwrap_or_else(|| "Desconhecido".to_string());
+            let started_at = chrono::DateTime::from_timestamp_millis(payload.info.game_start_timestamp).map(|value| value.to_rfc3339()).unwrap_or_else(|| payload.info.game_start_timestamp.to_string());
+            matches.push(RiotMatchSummary { id, started_at, duration_seconds: payload.info.game_duration, queue: payload.info.queue_id.to_string(), champion: player.champion_name.clone(), role: if player.team_position.is_empty() { "UNKNOWN".to_string() } else { player.team_position.clone() }, opponent, result: if player.win { "win".to_string() } else { "loss".to_string() }, kda: format!("{} / {} / {}", player.kills, player.deaths, player.assists), cs: player.total_minions_killed + player.neutral_minions_killed, source: "riot-api".to_string(), analyzed: false });
+        }
+    }
+    Ok(RiotSyncResult { account, matches, synced_at: chrono::Utc::now().to_rfc3339() })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -62,7 +108,7 @@ pub fn run() {
             app.manage(AppState { db_path: data_dir.join("jax-coach.sqlite3") });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![health_check, list_matches, scan_outplayed_directory])
+        .invoke_handler(tauri::generate_handler![health_check, list_matches, scan_outplayed_directory, riot_sync_matches])
         .run(tauri::generate_context!())
         .expect("error while running Jax Coach");
 }
