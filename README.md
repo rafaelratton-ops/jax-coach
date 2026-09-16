@@ -95,7 +95,10 @@ Não havia credencial/autorização de GitHub/GitLab disponível no ambiente des
 - `src/app/App.tsx` — telas e fluxo principal.
 - `src/domain/` — tipos, fixtures, análise, safe mode e matcher.
 - `src/services/` — storage, diagnostics e pipeline de gravações.
+- `src/services/logger.ts` — logs locais rotacionados (últimos 200 eventos) para diagnostics.
 - `src-tauri/` — shell desktop Windows e comandos SQLite iniciais.
 - `migrations/` — schema SQLite versionado.
 - `tests/` — testes básicos executáveis com Vitest.
 - `PROGRESS.md` — marcos e próximos passos.
+
+No shell Tauri, o comando `scan_outplayed_directory` enumera extensões de vídeo suportadas (`mp4`, `mkv`, `webm`, `mov`) sem tocar no conteúdo. O score de associação continua sendo calculado na camada de domínio, depois que horário e duração estiverem disponíveis.

@@ -3,8 +3,13 @@
 use std::path::PathBuf;
 use tauri::{Manager, State};
 use rusqlite::{Connection, Result as SqlResult};
+use serde::Serialize;
 
 struct AppState { db_path: PathBuf }
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RecordingCandidate { path: String, started_at: String, duration_seconds: u64, size_bytes: u64, confidence: f32, reason: String, extension: String }
 
 fn connection(state: &AppState) -> SqlResult<Connection> {
     let conn = Connection::open(&state.db_path)?;
@@ -30,6 +35,23 @@ fn list_matches(state: State<'_, AppState>) -> Result<String, String> {
     serde_json::to_string(&values).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn scan_outplayed_directory(directory: String) -> Result<Vec<RecordingCandidate>, String> {
+    let root = PathBuf::from(directory);
+    if !root.exists() { return Err("Pasta de gravações não encontrada".to_string()); }
+    let mut found = Vec::new();
+    let entries = std::fs::read_dir(root).map_err(|e| e.to_string())?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let extension = path.extension().and_then(|value| value.to_str()).unwrap_or("").to_ascii_lowercase();
+        if !matches!(extension.as_str(), "mp4" | "mkv" | "webm" | "mov") { continue; }
+        let metadata = entry.metadata().map_err(|e| e.to_string())?;
+        let modified = metadata.modified().ok().and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok()).map(|value| value.as_secs()).unwrap_or(0);
+        found.push(RecordingCandidate { path: path.to_string_lossy().to_string(), started_at: modified.to_string(), duration_seconds: 0, size_bytes: metadata.len(), confidence: 0.0, reason: "aguardando score por horário/duração".to_string(), extension });
+    }
+    Ok(found)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -40,7 +62,7 @@ pub fn run() {
             app.manage(AppState { db_path: data_dir.join("jax-coach.sqlite3") });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![health_check, list_matches])
+        .invoke_handler(tauri::generate_handler![health_check, list_matches, scan_outplayed_directory])
         .run(tauri::generate_context!())
         .expect("error while running Jax Coach");
 }
