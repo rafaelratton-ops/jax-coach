@@ -1,0 +1,13 @@
+{
+  "id": "BR1_987654321",
+  "startedAt": "2026-09-15T23:18:00Z",
+  "durationSeconds": 1842,
+  "queue": "Ranked Solo",
+  "champion": "Jax",
+  "role": "TOP",
+  "opponent": "Camille",
+  "result": "win",
+  "kda": "8 / 3 / 6",
+  "cs": 214,
+  "source": "fixture"
+}

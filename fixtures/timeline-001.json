@@ -1,0 +1,8 @@
+{
+  "matchId": "BR1_987654321",
+  "source": "fixture",
+  "events": [
+    { "occurredAt": "00:06:42", "kind": "trade", "summary": "Counter Strike absorveu o primeiro stun da Camille antes do engage.", "confidence": 0.92 },
+    { "occurredAt": "00:08:17", "kind": "wave", "summary": "A terceira wave foi resetada antes do recall.", "confidence": 0.81 }
+  ]
+}
