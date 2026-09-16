@@ -7,6 +7,7 @@ import type { AnalysisResult } from '../domain/analysis'
 import { getAIProvider } from '../providers'
 import { findRecordingsForMatch } from '../services/recordings'
 import { runDiagnostics } from '../services/diagnostics'
+import { log } from '../services/logger'
 import { storage } from '../services/storage'
 
 const tabs: Array<{ id: CoachTab; label: string; icon: typeof Gauge }> = [
@@ -27,14 +28,16 @@ function App() {
   const recordings = fixtureRecordings
   const reminders = useMemo(() => getSafeModeReminders(settings, patterns, selectedMatch.opponent), [settings, selectedMatch, patterns])
 
-  function notify(message: string) { setToast(message); window.setTimeout(() => setToast(null), 2600) }
+  function notify(message: string) { log('info', 'ui.notify', message); setToast(message); window.setTimeout(() => setToast(null), 2600) }
   function updateSettings(next: AppSettings) { setSettings(next); storage.saveSettings(next); notify('Preferências salvas localmente') }
   async function analyze(match: MatchSummary) {
     setSelectedMatch(match)
+    log('info', 'analysis.started', match.id)
     notify('Analisando pós-jogo com o provider local…')
     const result = await getAIProvider().analyzePostGame({ match, facts, patterns })
     setAnalysisResults((current) => ({ ...current, [match.id]: result }))
     setMatches((current) => current.map((item) => item.id === match.id ? { ...item, analyzed: true } : item))
+    log('info', 'analysis.completed', `${match.id} · ${result.heuristics.length} heurística(s)`)
     notify(`${result.heuristics.length || 1} ponto(s) de revisão preparado(s)`)
     setActive('history')
   }
