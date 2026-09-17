@@ -84,9 +84,9 @@ Compliance e fontes: [docs/COMPLIANCE.md](docs/COMPLIANCE.md). Não é um produt
 
 ## Git e outro computador
 
-O repositório é local e os marcos estão em commits. **Não há remoto configurado** nesta entrega. Instaladores, banco, vídeos e credenciais não entram no Git.
+O repositório está conectado ao GitHub em `https://github.com/rafaelratton-ops/jax-coach`. Os marcos estão em commits. Instaladores, banco, vídeos e credenciais não entram no Git.
 
-Crie um repositório vazio privado no GitHub/GitLab e substitua a URL abaixo pela dele:
+Para continuar em outro computador, clone o repositório acima. Se preferir outro GitHub/GitLab, substitua a URL nos comandos abaixo:
 
 ```powershell
 git remote add origin https://github.com/SEU_USUARIO/jax-coach.git

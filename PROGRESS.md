@@ -39,7 +39,7 @@
 - Aprovação/registro Riot antes de distribuição pública; a implementação não implica aprovação.
 - Provider de IA externa e interpretação automática de vídeo: não implementados.
 - Troca de conta e migração para tabelas normalizadas: próximos incrementos possíveis.
-- Remoto Git: não configurado. Histórico local em commits e cópia Git transportável em `outputs`; instruções no README.
+- Remoto Git: configurado posteriormente em `https://github.com/rafaelratton-ops/jax-coach`; histórico local e cópia Git transportável em `outputs` continuam disponíveis.
 
 ## 2026-09-17 · correção 0.2.1
 
