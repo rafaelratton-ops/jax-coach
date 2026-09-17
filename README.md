@@ -71,7 +71,7 @@ React + TypeScript/Vite, Tauri 2/Rust, SQLite/rusqlite. Não há servidor interm
 - `src-tauri/src/media.rs`: descoberta, metadados e recortes locais.
 - `src/services/logger.ts`: últimos 200 registros locais, com ocultação de chaves.
 
-O banco fica na pasta de dados Tauri do identificador `com.jaxcoach.desktop` (normalmente `%APPDATA%/com.jaxcoach.desktop/jax-coach.sqlite3`). Preferências e logs usam o armazenamento local do WebView. A exportação JSON não inclui vídeos, chave ou cache bruto de Timeline; ainda não há importação JSON na interface. Para cópia completa, feche o app e copie sua pasta de dados. Arquivos de treino não são criptografados: use apenas um PC confiável.
+O banco fica na pasta de dados Tauri do identificador `com.jaxcoach.desktop` (normalmente `%APPDATA%/com.jaxcoach.desktop/jax-coach.sqlite3`). Preferências e logs usam o armazenamento local do WebView. A exportação/importação JSON não inclui vídeos, chave ou cache bruto de Timeline. Para cópia completa, feche o app e copie sua pasta de dados. Arquivos de treino não são criptografados: use apenas um PC confiável.
 
 ## Credenciais e limitações
 

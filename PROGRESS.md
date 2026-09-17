@@ -38,7 +38,7 @@
 - Varredura e recorte de gravação real: FFmpeg/FFprobe não disponíveis neste ambiente; execução ponta a ponta ainda requer instalação e um vídeo finalizado.
 - Aprovação/registro Riot antes de distribuição pública; a implementação não implica aprovação.
 - Provider de IA externa e interpretação automática de vídeo: não implementados.
-- Importação de backup JSON, troca de conta e migração para tabelas normalizadas: próximos incrementos possíveis.
+- Troca de conta e migração para tabelas normalizadas: próximos incrementos possíveis.
 - Remoto Git: não configurado. Histórico local em commits e cópia Git transportável em `outputs`; instruções no README.
 
 ## 2026-09-17 · correção 0.2.1
@@ -51,4 +51,5 @@
 
 - [x] Teste de conexão Riot separado da importação, com confirmação da conta antes de buscar partidas.
 - [x] Backup JSON restaurável com validação de formato, limite de tamanho e bloqueio de chaves.
+- [x] 16 testes TypeScript + 4 testes Rust passaram após o upgrade.
 - [x] Instalador e diagnóstico preparados para a versão 0.3.0.
