@@ -78,3 +78,11 @@
 - [x] O painel não recebe eventos, cooldowns, vida, ouro, runas ou dados brutos; nada é enviado para IA durante a partida.
 - [x] As sugestões exibem várias opções de treino históricas e deixam a escolha com o jogador; não há comando, input automático ou recomendação oculta.
 - [x] Documentação de compliance, guia para usuário leigo e instaladores atualizados.
+
+## 2026-09-17 · ciclo de performance e treino · versão 0.5.0
+
+- [x] Nova área Performance com indicadores pessoais de Jax/top: partidas, vitórias, CS aos 10 minutos e mortes antes dos 10.
+- [x] Bloco de treino de 10 partidas com quatro objetivos práticos e progresso salvo na biblioteca local.
+- [x] Histórico ganhou revisão rápida pós-partida: resultado do objetivo, o que aconteceu, primeira decisão a mudar e próximo teste.
+- [x] Check-ins ficam associados às partidas do bloco e aparecem no acompanhamento do progresso.
+- [x] 20 testes TypeScript passaram após a rodada; build web verificado.

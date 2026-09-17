@@ -1,5 +1,6 @@
 import type { AnalysisResult } from './analysis'
 import type { MatchFact, MatchSummary, RecordingCandidate } from './types'
+import type { TrainingBlock } from './performance'
 
 export interface Library {
   version: 2
@@ -11,6 +12,7 @@ export interface Library {
   recordings: RecordingCandidate[]
   syncedAt?: string
   goal: string
+  activeBlock?: TrainingBlock
 }
 
 export function emptyLibrary(): Library {

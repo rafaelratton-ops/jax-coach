@@ -18,6 +18,7 @@ Este documento descreve decisões de implementação, não garante aprovação, 
 5. Fatos de API e exemplos são identificados; heurísticas são rotuladas como hipóteses e ligadas à evidência. Causa de morte ou uso incorreto de habilidade não são inferidos da Timeline.
 6. Originais de vídeo são lidos apenas para metadados/recortes e preservados. Nenhum vídeo é enviado a serviços externos.
 7. Credenciais não são distribuídas no binário nem no código. Banco e exportações contêm dados pessoais de treino e precisam ser protegidos pelo usuário.
+8. Indicadores de performance e blocos de treino usam partidas encerradas, Timelines já obtidas e check-ins escritos pelo jogador. O objetivo é medir evolução, não dar nota automática ou alterar a partida atual.
 
 ## Limitações e responsabilidade
 

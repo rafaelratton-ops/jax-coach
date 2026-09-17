@@ -1,28 +1,32 @@
-# Jax Coach · 0.4.0
+# Jax Coach · 0.5.0
 
 Coach pessoal para Windows, local-first, inicialmente focado em Jax/top. Revise partidas encerradas, guarde anotações e leve um objetivo histórico para o segundo monitor. Não controla o jogo nem acompanha a partida em segundo plano.
 
 ## Usar sem programar
 
-Abra o instalador `outputs/Jax-Coach-0.4.0-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
+Abra o instalador `outputs/Jax-Coach-0.5.0-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
 
 1. **Histórico:** selecione uma partida, veja eventos, hipóteses e escreva sua própria anotação.
-2. **Padrões pessoais:** ajuste o objetivo de treino e consulte a evidência por partida.
-3. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. Ative **Acompanhamento seguro** quando quiser uma leitura resumida a cada 10 segundos do League Client local. Ele mostra fatos disponíveis (modo, tempo, campeão, nível, rota, itens e placar) e opções históricas de treino; desligue quando quiser. Escape fecha o painel.
-4. **Configurações:** seu Riot ID inicial é `Pula Nuvem#Hope`. Cole uma chave válida somente no campo Chave Riot para importar 5, 10 ou 20 partidas.
-5. **Vídeos:** informe a pasta Outplayed, procure gravações e confira o horário antes de recortar.
+2. **Performance:** veja seus indicadores de Jax/top e comece um bloco de 10 partidas com um único objetivo.
+3. **Padrões pessoais:** ajuste o objetivo de treino e consulte a evidência por partida.
+4. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. Ative **Acompanhamento seguro** quando quiser uma leitura resumida a cada 10 segundos do League Client local. Ele mostra fatos disponíveis (modo, tempo, campeão, nível, rota, itens e placar) e opções históricas de treino; desligue quando quiser. Escape fecha o painel.
+5. **Configurações:** seu Riot ID inicial é `Pula Nuvem#Hope`. Cole uma chave válida somente no campo Chave Riot para importar 5, 10 ou 20 partidas.
+6. **Vídeos:** informe a pasta Outplayed, procure gravações e confira o horário antes de recortar.
 
 O histórico, as revisões e as anotações importados ficam neste PC. A chave fica somente na memória da sessão, não vai para Git nem é salva no banco. Para buscar novas Timelines depois de reabrir, conecte novamente; revisões e Timelines já obtidas continuam offline.
 
 ## O que esta versão faz
 
 - Dashboard calculado da amostra importada; remakes não contam nas médias.
+- Performance de Jax/top com CS aos 10 minutos, mortes antes dos 10, vitórias e amostra revisada.
+- Blocos de treino de 10 partidas com um objetivo por vez e check-in pós-jogo.
 - Histórico com busca e filtros; reconhece o campeão real e o adversário da mesma rota quando informado pela Riot.
 - Meu Jax considera apenas Jax/top e mostra quantidade de partidas em cada matchup.
 - Match Timeline: mortes, abates, assistências, compras, participação em objetivos e CS/ouro aos 10 minutos, quando disponíveis.
 - Regras locais criam **pontos para revisar**, não explicações inventadas. Timeline não revela intenção, wave ou timing de habilidade.
 - Padrões agregados requerem pelo menos 3 partidas Jax/top revisadas e repetição em 2. São tendências de triagem, não causalidade ou probabilidade estatística.
 - Notas e objetivo editáveis; exportação JSON da biblioteca e dos logs.
+- Revisão rápida pós-partida com três perguntas: o que aconteceu, qual decisão mudaria e o que testar depois.
 - Biblioteca SQLite persistente e cache local das Timelines. Demonstração isolada, temporária.
 - Janela de foco com acompanhamento seguro opcional; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta. A leitura periódica é resumida e não leva ouro, vida, cooldowns, eventos, runas ou dados brutos para a ficha ou para a IA.
 
@@ -64,6 +68,7 @@ React + TypeScript/Vite, Tauri 2/Rust, SQLite/rusqlite. Não há servidor interm
 - `src/domain/review.ts`: fatos observados de Timeline.
 - `src/domain/analysis.ts`: heurísticas rastreáveis por IDs de fatos.
 - `src/domain/library.ts`: métricas, agregação histórica e biblioteca versionada.
+- `src/domain/performance.ts` e `src/components/Performance.tsx`: indicadores de Jax/top, objetivos e blocos de treino de 10 partidas.
 - `src/providers/`: contrato AIProvider, regras locais como padrão, mock preservado para testes.
 - `src/prompts/`: prompts versionados para futura integração de IA; não há chamada a modelo externo nesta versão.
 - `src-tauri/src/riot.rs`: Account-v1 e Match-v5, chamadas oficiais com timeout e mensagens de erro sem credenciais.
