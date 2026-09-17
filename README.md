@@ -1,6 +1,6 @@
 # Jax Coach · 0.3.0
 
-Coach pessoal para Windows, local-first, inicialmente focado em Jax/top. Revise partidas encerradas, guarde anotações e leve um objetivo histórico para o segundo monitor. Não controla o jogo nem acompanha a partida ao vivo.
+Coach pessoal para Windows, local-first, inicialmente focado em Jax/top. Revise partidas encerradas, guarde anotações e leve um objetivo histórico para o segundo monitor. Não controla o jogo nem acompanha a partida em segundo plano.
 
 ## Usar sem programar
 
@@ -8,7 +8,7 @@ Abra o instalador `outputs/Jax-Coach-0.3.0-x64-setup.exe`. O app abre em **Demon
 
 1. **Histórico:** selecione uma partida, veja eventos, hipóteses e escreva sua própria anotação.
 2. **Padrões pessoais:** ajuste o objetivo de treino e consulte a evidência por partida.
-3. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. O conteúdo fica congelado até fechar/reabrir. Inclui uma ficha estática de matchup do Jax com itens para considerar, ações de treino e padrões pessoais; você escolhe a matchup no próprio painel. Escape fecha o painel.
+3. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. Ao clicar, o app pode fazer uma única consulta local para identificar Jax, rota e adversário; depois o conteúdo fica congelado até fechar/reabrir. Inclui uma ficha estática de matchup do Jax com itens para considerar, ações de treino e padrões pessoais. Escape fecha o painel.
 4. **Configurações:** seu Riot ID inicial é `Pula Nuvem#Hope`. Cole uma chave válida somente no campo Chave Riot para importar 5, 10 ou 20 partidas.
 5. **Vídeos:** informe a pasta Outplayed, procure gravações e confira o horário antes de recortar.
 
@@ -24,7 +24,7 @@ O histórico, as revisões e as anotações importados ficam neste PC. A chave f
 - Padrões agregados requerem pelo menos 3 partidas Jax/top revisadas e repetição em 2. São tendências de triagem, não causalidade ou probabilidade estatística.
 - Notas e objetivo editáveis; exportação JSON da biblioteca e dos logs.
 - Biblioteca SQLite persistente e cache local das Timelines. Demonstração isolada, temporária.
-- Janela de foco estática; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta. A ficha não consulta a partida atual nem muda por causa de ouro, vida, cooldowns ou posição.
+- Janela de foco estática; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta. A consulta local do contexto é única e não leva ouro, vida, cooldowns, eventos ou posição para a ficha.
 
 ## Outplayed e FFmpeg
 
@@ -67,6 +67,7 @@ React + TypeScript/Vite, Tauri 2/Rust, SQLite/rusqlite. Não há servidor interm
 - `src/providers/`: contrato AIProvider, regras locais como padrão, mock preservado para testes.
 - `src/prompts/`: prompts versionados para futura integração de IA; não há chamada a modelo externo nesta versão.
 - `src-tauri/src/riot.rs`: Account-v1 e Match-v5, chamadas oficiais com timeout e mensagens de erro sem credenciais.
+- `src-tauri/src/live.rs` e `src/services/liveClient.ts`: leitura local opt-in do contexto e consulta manual dos endpoints do League Client; nenhum dado bruto chega ao foco ou à IA.
 - `src-tauri/src/persistence.rs`: biblioteca JSON em registro SQLite e cache das Timelines; migrações idempotentes 001 e 002. As tabelas normalizadas da primeira migração são preservadas, mas a biblioteca v2 usa o snapshot como fonte de verdade.
 - `src-tauri/src/media.rs`: descoberta, metadados e recortes locais.
 - `src/services/logger.ts`: últimos 200 registros locais, com ocultação de chaves.
@@ -75,9 +76,9 @@ O banco fica na pasta de dados Tauri do identificador `com.jaxcoach.desktop` (no
 
 ## Credenciais e limitações
 
-A API Riot exige chave autorizada. Chaves de desenvolvimento expiram; o app informa a recusa, mas não renova a chave automaticamente. Veja o [portal oficial](https://developer.riotgames.com/). Antes de distribuir uma integração além do uso pessoal, registre o produto e verifique as exigências atuais de aprovação/chave; não distribua uma chave de produção no executável.
+A API Riot exige chave autorizada. Chaves de desenvolvimento expiram; o app informa a recusa, mas não renova a chave automaticamente. Veja o [portal oficial](https://developer.riotgames.com/). O League Client também oferece uma API local para dados da partida, mas ela é uma integração separada e não substitui o registro/aprovação exigidos para distribuição pública.
 
-IA externa e interpretação automática de vídeo **não estão implementadas**. As revisões atuais usam regras locais. Não há detecção automática de partida em andamento: use sincronização/revisão somente depois do jogo e abra o painel estático antes de jogar. A matchup é escolhida por você; isso evita transformar o painel em assistência dinâmica. Uma biblioteca comporta uma conta; troca de dono é bloqueada para preservar seu histórico. Não há download automático de FFmpeg nem leitura de arquivos internos do LoL.
+IA externa e interpretação automática de vídeo **não estão implementadas**. As revisões atuais usam regras locais. O Modo Foco faz, no máximo, uma consulta manual única ao League Client para organizar a ficha; não há polling, leitura de memória, leitura de DLL, captura de tela, automação de input ou assistência que dite decisões. Em **Diagnóstico → Dados locais da partida**, você pode consultar e exportar manualmente os endpoints oferecidos pelo League Client; esses dados não são enviados ao painel de foco nem ao provedor de IA. Uma biblioteca comporta uma conta; troca de dono é bloqueada para preservar seu histórico. Não há download automático de FFmpeg nem leitura de arquivos internos do LoL.
 
 Compliance e fontes: [docs/COMPLIANCE.md](docs/COMPLIANCE.md). Não é um produto aprovado ou endossado pela Riot.
 

@@ -47,6 +47,10 @@ function planForOpponent(opponent: string, sampleSize: number, demo: boolean): M
   }
 }
 
+export function buildMatchupPlanForOpponent(opponent: string, sampleSize: number, demo: boolean): MatchupPlan {
+  return planForOpponent(opponent.trim(), sampleSize, demo)
+}
+
 export function buildMatchupPlans(matches: MatchSummary[], demo: boolean): MatchupPlan[] {
   const jaxMatches = matches
     .filter(match => match.champion === 'Jax' && match.role === 'TOP' && match.opponent.trim())

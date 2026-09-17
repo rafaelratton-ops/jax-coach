@@ -6,13 +6,14 @@ Este documento descreve decisões de implementação, não garante aprovação, 
 
 - [Políticas gerais e chaves do Developer Portal](https://developer.riotgames.com/docs/portal)
 - [Políticas e APIs de League of Legends](https://developer.riotgames.com/docs/lol)
+- [FAQ sobre APIs locais e League Client](https://developer.riotgames.com/docs/faqs)
 - [Referência Match-v5](https://developer.riotgames.com/apis#match-v5)
 
 ## Implementado
 
 1. Consultas opt-in a Account-v1/Match-v5 por HTTPS, com chave em cabeçalho, nunca em URL ou banco. Nenhum scraping de OP.GG/Mobalytics.
-2. Somente partidas encerradas e suas Timelines. Sem leitura de memória, DLL injection, automação de input ou dados ocultos da sessão.
-3. Painel para segundo monitor contém snapshot de objetivo e notas históricas. Não recebe eventos ao vivo, não monitora cooldowns inimigos, não faz recomendações situacionais.
+2. Partidas encerradas e suas Timelines são a fonte da análise. O League Client API local é consultado somente por ação explícita do usuário: uma leitura curta de contexto para montar o foco e uma consulta completa separada na tela Diagnóstico. Sem leitura de memória, DLL injection, automação de input ou captura de tela.
+3. Painel para segundo monitor contém snapshot de objetivo e notas históricas. A leitura de contexto não leva eventos, ouro, vida, cooldowns ou itens para a ficha; não há polling e não há recomendações situacionais.
 4. Enquanto o painel estiver aberto, o backend recusa novas importações, análise de Timeline, varreduras e recortes. A interface impede abri-lo durante operações iniciadas nela.
 5. Fatos de API e exemplos são identificados; heurísticas são rotuladas como hipóteses e ligadas à evidência. Causa de morte ou uso incorreto de habilidade não são inferidos da Timeline.
 6. Originais de vídeo são lidos apenas para metadados/recortes e preservados. Nenhum vídeo é enviado a serviços externos.
@@ -20,7 +21,7 @@ Este documento descreve decisões de implementação, não garante aprovação, 
 
 ## Limitações e responsabilidade
 
-Não há detecção de jogo ativo. O usuário deve fazer revisão/importação/recortes depois do jogo. O bloqueio do painel não é um detector de partida nem garantia de compliance. O score de vídeos é somente compatibilidade heurística. Não há IA pesada ou visão automática nesta versão; futuras integrações exigem consentimento sobre envio, retenção e custo e devem continuar restritas ao pós-jogo.
+O League Client API é uma interface local documentada, mas a própria Riot informa que ela não é oficialmente suportada e pede que o uso seja comunicado quando combinado com a Riot API. Por isso, a consulta completa fica atrás de um botão em Diagnóstico, pode ser exportada pelo usuário e não é usada para automatizar decisões. O bloqueio do painel não é um detector contínuo de jogo nem garantia de compliance. O score de vídeos é somente compatibilidade heurística. Não há IA pesada ou visão automática nesta versão; futuras integrações exigem consentimento sobre envio, retenção e custo e devem continuar restritas ao pós-jogo.
 
 O uso de chave pessoal/de desenvolvimento e a distribuição pública têm exigências diferentes. Antes de lançar, confirmar registro, aprovação e mecanismo de chave adequado no portal; nunca incorporar chave de produção no cliente. Respeitar limites e mensagens 429/Retry-After. A versão atual espaça consultas e informa o tempo de espera; não implementa um escalonador global baseado em todos os headers de rate limit.
 

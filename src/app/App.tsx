@@ -8,6 +8,7 @@ import { getAIProvider } from '../providers'
 import { extractFacts, type RiotTimeline } from '../domain/review'
 import { storage } from '../services/storage'
 import { desktop, loadLibrary, readLibraryFile, saveLibrary } from '../services/library'
+import { readLiveMatchContext, type LiveMatchContext } from '../services/liveClient'
 import { normalizeRiotId, syncRiotMatches, testRiotConnection } from '../services/riotApi'
 import { log } from '../services/logger'
 import { Overview } from '../components/Overview'
@@ -17,7 +18,7 @@ import { Settings } from '../components/Settings'
 import { Videos } from '../components/Videos'
 import { Diagnostics, type Environment } from '../components/Diagnostics'
 import { Focus, type FocusSnapshot } from '../components/Focus'
-import { buildMatchupPlans } from '../domain/matchup'
+import { buildMatchupPlanForOpponent, buildMatchupPlans } from '../domain/matchup'
 
 const navigation = [
   { id: 'dashboard', label: 'Visão geral', icon: LayoutDashboard },
@@ -162,7 +163,25 @@ function Coach() {
   }
   async function openFocus() {
     if (busy) return
-    const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`), matchups: buildMatchupPlans(data.matches, demo) }
+    let live: LiveMatchContext | undefined
+    let matchups = buildMatchupPlans(data.matches, demo)
+    if (desktop()) {
+      try {
+        const context = await readLiveMatchContext()
+        if (context.connected) {
+          live = context
+          const opponent = context.opponentChampion?.trim()
+          if (opponent) {
+            const historical = matchups.find(item => item.opponent.toLowerCase() === opponent.toLowerCase())
+            const currentPlan = buildMatchupPlanForOpponent(opponent, historical?.sampleSize ?? 0, demo)
+            matchups = [currentPlan, ...matchups.filter(item => item.opponent.toLowerCase() !== opponent.toLowerCase())]
+          }
+        }
+      } catch {
+        // Sem League Client disponível, o painel continua com a seleção manual histórica.
+      }
+    }
+    const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`), matchups, live }
     try { if (desktop()) await invoke('open_focus', { snapshot }); else setFocus(snapshot) } catch (reason) { fail(reason) }
   }
   if (loadError) return <div className="startup"><h1>Seu histórico está protegido.</h1><p>{loadError}</p><button onClick={() => window.location.reload()}>Tentar novamente</button></div>

@@ -3,7 +3,7 @@ import { fixtureMatches, fixtureRecordings, fixturePatterns } from '../src/domai
 import { matchRecordings } from '../src/domain/recordingMatcher'
 import { getSafeModeReminders } from '../src/domain/safeMode'
 import { defaultSettings } from '../src/domain/fixtures'
-import { buildMatchupPlan } from '../src/domain/matchup'
+import { buildMatchupPlan, buildMatchupPlanForOpponent } from '../src/domain/matchup'
 
 describe('recording matcher', () => {
   it('ranks a recording that matches time and duration', () => {
@@ -27,5 +27,12 @@ describe('focus matchup plan', () => {
     expect(plan?.sampleSize).toBe(1)
     expect(plan?.sourceLabel).toContain('ficha estática')
     expect(plan?.actions.join(' ')).toContain('Counter Strike')
+  })
+
+  it('creates a static plan for a matchup identified only by the local client', () => {
+    const plan = buildMatchupPlanForOpponent('Renekton', 0, false)
+    expect(plan.opponent).toBe('Renekton')
+    expect(plan.sampleSize).toBe(0)
+    expect(plan.sourceLabel).toContain('ficha estática')
   })
 })

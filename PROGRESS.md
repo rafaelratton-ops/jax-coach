@@ -62,3 +62,11 @@
 - [x] Ficha inclui itens para considerar, ações de treino, pontos a evitar e tamanho da amostra pessoal.
 - [x] Mantido o bloqueio de leitura da partida atual: nenhuma vida, ouro, cooldown, posição, evento ou ordem em tempo real é consultado.
 - [x] 17 testes TypeScript + 4 testes Rust passaram; instalador Windows e bundle Git foram regenerados.
+
+## 2026-09-17 · consulta local segura da partida
+
+- [x] Modo Foco tenta uma única leitura local do League Client para identificar campeão, rota e adversário; sem monitoramento contínuo.
+- [x] A ficha continua estática e histórica: ouro, vida, cooldowns, eventos e itens não alimentam o foco nem o provedor de IA.
+- [x] Diagnóstico ganhou consulta manual e exportação dos endpoints locais (`allgamedata`, `gamestats`, jogador ativo, habilidades, runas, jogadores e eventos).
+- [x] Documentada a diferença entre API local documentada e aprovação para distribuição pública; nenhuma chave é incorporada ao app.
+- [x] 18 testes TypeScript + 4 testes Rust passaram após esta etapa; instalador Windows recompilado com a consulta local.

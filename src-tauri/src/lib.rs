@@ -3,6 +3,7 @@ use std::{
     sync::{atomic::AtomicBool, Mutex},
 };
 use tauri::Manager;
+mod live;
 mod media;
 mod persistence;
 mod riot;
@@ -99,6 +100,8 @@ pub fn run() {
             riot::riot_sync_matches,
             riot::riot_test_connection,
             riot::riot_timeline,
+            live::live_match_context,
+            live::live_diagnostics,
             media::scan_outplayed_directory,
             media::detect_environment,
             media::create_clip,
