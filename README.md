@@ -1,10 +1,10 @@
-# Jax Coach · 0.2.0
+# Jax Coach · 0.2.1
 
 Coach pessoal para Windows, local-first, inicialmente focado em Jax/top. Revise partidas encerradas, guarde anotações e leve um objetivo histórico para o segundo monitor. Não controla o jogo nem acompanha a partida ao vivo.
 
 ## Usar sem programar
 
-Abra o instalador `outputs/Jax-Coach-0.2.0-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
+Abra o instalador `outputs/Jax-Coach-0.2.1-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
 
 1. **Histórico:** selecione uma partida, veja eventos, hipóteses e escreva sua própria anotação.
 2. **Padrões pessoais:** ajuste o objetivo de treino e consulte a evidência por partida.

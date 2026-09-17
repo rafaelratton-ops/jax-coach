@@ -40,3 +40,9 @@
 - Provider de IA externa e interpretação automática de vídeo: não implementados.
 - Importação de backup JSON, troca de conta e migração para tabelas normalizadas: próximos incrementos possíveis.
 - Remoto Git: não configurado. Histórico local em commits e cópia Git transportável em `outputs`; instruções no README.
+
+## 2026-09-17 · correção 0.2.1
+
+- [x] Aceita Riot ID colado como `Nome#Tag` ou em campos separados.
+- [x] Mensagens mais claras para chave expirada/recusada, Riot ID inválido e conta sem partidas recentes.
+- [x] Instalador recompilado como 0.2.1.
