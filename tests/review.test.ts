@@ -7,12 +7,19 @@ import { scoreRecording } from '../src/domain/recordingMatcher'
 import { fixtureMatches, fixtureRecordings } from '../src/domain/fixtures'
 import { loadLibrary, saveLibrary } from '../src/services/library'
 import { storage } from '../src/services/storage'
+import { normalizeRiotId } from '../src/services/riotApi'
 const match = { ...fixtureMatches[0], participantId: 1, opponentParticipantId: 6, source: 'riot-api' as const }
 const timeline: RiotTimeline = { info: { frames: [
   { timestamp: 300000, events: [{ type: 'CHAMPION_KILL', timestamp: 280000, victimId: 1 }, { type: 'CHAMPION_KILL', timestamp: 290000, victimId: 4 }] },
   { timestamp: 600000, events: [{ type: 'CHAMPION_KILL', timestamp: 550000, victimId: 1 }], participantFrames: { '1': { minionsKilled: 52, totalGold: 3000 }, '6': { totalGold: 3400 } } },
 ] } }
 afterEach(() => vi.unstubAllGlobals())
+describe('Riot ID input', () => {
+  it('accepts the pasted Name#Tag format', () => {
+    expect(normalizeRiotId(' Pula Nuvem#Hope ', 'Hope')).toEqual({ gameName: 'Pula Nuvem', tagLine: 'Hope' })
+    expect(normalizeRiotId('Pula Nuvem', '#Hope')).toEqual({ gameName: 'Pula Nuvem', tagLine: 'Hope' })
+  })
+})
 describe('review evidence', () => {
   it('extracts only the selected player events and lane metrics', () => {
     const facts = extractFacts(match, timeline)

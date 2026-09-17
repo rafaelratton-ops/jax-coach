@@ -28,7 +28,7 @@
 - [x] Busca de vídeos em subpastas, FFprobe opcional, horário explicitamente estimado, confirmação manual e recortes FFmpeg sem alterar originais.
 - [x] Erros Riot 401/403/404/429/5xx e timeout; chave somente na sessão, redigida nos logs e recusada nas anotações persistidas.
 - [x] Dependências de teste atualizadas; `npm audit` retornou zero vulnerabilidades conhecidas em 2026-09-16.
-- [x] 14 testes TypeScript + 4 testes Rust passaram; build web e instaladores Windows compilados.
+- [x] 15 testes TypeScript + 4 testes Rust passaram; build web e instaladores Windows compilados.
 - [x] QA no navegador: dashboard, histórico, nota demonstrativa, painel de foco/Escape e separação de dados pessoais vazios. Sem overflow horizontal detectado no viewport de 1280 px.
 - [x] Executável Windows 0.2.0 abriu e carregou a biblioteca via IPC. Automação nativa de cliques não estava operacional neste ambiente; interação completa da janela independente ainda requer teste manual.
 

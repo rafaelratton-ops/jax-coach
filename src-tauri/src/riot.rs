@@ -69,9 +69,8 @@ pub struct SyncResult {
 
 fn error_message(status: reqwest::StatusCode, retry: Option<&str>) -> String {
     match status.as_u16() {
-        401 | 403 => {
-            "A Riot recusou esta chave. Confira a chave no portal e tente novamente.".into()
-        }
+        400 => "A Riot não aceitou esse endereço. Use Nome e Tag separados, ou cole o formato Nome#Tag no campo Nome.".into(),
+        401 | 403 => "A Riot recusou esta chave. Chaves de desenvolvimento costumam expirar em 24 horas; gere uma nova no portal e tente novamente.".into(),
         404 => "A Riot não encontrou essa conta ou partida. Confira Nome#Tag.".into(),
         429 => format!(
             "Limite de consultas da Riot. Aguarde {} segundos e tente novamente.",

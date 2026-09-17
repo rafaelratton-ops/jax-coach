@@ -8,7 +8,7 @@ import { getAIProvider } from '../providers'
 import { extractFacts, type RiotTimeline } from '../domain/review'
 import { storage } from '../services/storage'
 import { desktop, loadLibrary, saveLibrary } from '../services/library'
-import { syncRiotMatches } from '../services/riotApi'
+import { normalizeRiotId, syncRiotMatches } from '../services/riotApi'
 import { log } from '../services/logger'
 import { Overview } from '../components/Overview'
 import { History } from '../components/History'
@@ -75,14 +75,16 @@ function Coach() {
   }
   async function sync(name: string, tag: string, key: string, count: number) {
     await work(async () => {
-      const result = await syncRiotMatches(name.trim(), tag.trim(), key.trim(), count)
+      const riotId = normalizeRiotId(name, tag)
+      const result = await syncRiotMatches(riotId.gameName, riotId.tagLine, key, count)
+      if (!result.matches.length) throw new Error('A Riot reconheceu a conta, mas não devolveu partidas nesse período. Confira se este é o Riot ID usado no LoL e se há partidas recentes.')
       if (personal.owner && personal.owner !== result.account.puuid) throw new Error('Esta biblioteca pertence a outra conta. A troca de conta ainda não é suportada; seu histórico foi preservado.')
       const base = personal
       const next: Library = { ...base, owner: result.account.puuid, matches: mergeMatches(base.matches, result.matches), syncedAt: result.syncedAt }
       await saveLibrary(next); setPersonal(next); setDemo(false)
       const preferences = { ...settings, riotGameName: result.account.gameName, riotTagLine: result.account.tagLine }
       storage.saveSettings(preferences); setSettings(preferences)
-      tell(`${result.matches.length} partidas consultadas. Seu histórico foi salvo neste computador.`)
+      tell(`${result.matches.length} partidas consultadas para ${result.account.gameName}#${result.account.tagLine}. Seu histórico foi salvo neste computador.`)
       void refresh()
     })
   }

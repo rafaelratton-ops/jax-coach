@@ -47,4 +47,4 @@ Ainda não está publicado no GitHub/GitLab. O README dentro do projeto explica 
 
 Esta versão usa regras locais para sugerir o que revisar. Ela ainda **não assiste aos vídeos automaticamente** nem usa uma IA externa. Use análises e importações depois de terminar a partida. Durante o jogo, o painel mostra somente seu objetivo e anotações antigas, sem acompanhar o que está acontecendo.
 
-Testes desta entrega: 18 testes automáticos passaram, build Windows gerado e interface conferida no navegador. Abertura do executável Windows confirmada. A janela separada precisa de uma conferência manual de interação; conexão Riot e recorte de vídeo real não foram testados nesta rodada.
+Testes desta entrega: 19 testes automáticos passaram, build Windows gerado e interface conferida no navegador. Abertura do executável Windows confirmada. A janela separada precisa de uma conferência manual de interação; conexão Riot e recorte de vídeo real não foram testados nesta rodada.
