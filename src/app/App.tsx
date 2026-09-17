@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Activity, Archive, ArrowRight, BookOpen, CheckCircle2, Crosshair, Film, LayoutDashboard, Monitor, Settings2, Sword, TrendingUp, X } from 'lucide-react'
+import { Activity, Archive, ArrowRight, BookOpen, Brain, CheckCircle2, Crosshair, Film, LayoutDashboard, Monitor, Settings2, Sword, TrendingUp, X } from 'lucide-react'
 import type { AppSettings, CoachTab, MatchSummary, RecordingCandidate } from '../domain/types'
 import { emptyLibrary, mergeMatches, type Library } from '../domain/library'
 import { demoLibrary } from '../domain/demo'
@@ -19,6 +19,7 @@ import { Videos } from '../components/Videos'
 import { Diagnostics, type Environment } from '../components/Diagnostics'
 import { Focus, type FocusSnapshot } from '../components/Focus'
 import { Performance } from '../components/Performance'
+import { Advisor } from '../components/Advisor'
 import { buildMatchupPlanForOpponent, buildMatchupPlans } from '../domain/matchup'
 import type { CheckInResult, GoalId } from '../domain/performance'
 
@@ -27,6 +28,7 @@ const navigation = [
   { id: 'history', label: 'Histórico', icon: Archive },
   { id: 'my-jax', label: 'Meu Jax', icon: Sword },
   { id: 'performance', label: 'Performance', icon: TrendingUp },
+  { id: 'advisor', label: 'Assessor', icon: Brain },
   { id: 'patterns', label: 'Padrões pessoais', icon: BookOpen },
   { id: 'videos', label: 'Vídeos', icon: Film },
   { id: 'settings', label: 'Configurações', icon: Settings2 },
@@ -212,8 +214,8 @@ function Coach() {
   return <div className="app-shell">
     <aside className="sidebar"><div className="brand"><span><Crosshair size={23} /></span><div>JAX<strong>COACH</strong><small>MEMÓRIA DE JOGO</small></div></div>
       <div className="profile"><div className="avatar">{settings.riotGameName.slice(0, 1)}</div><div><strong>{settings.riotGameName}</strong><small>#{settings.riotTagLine} · Brasil</small></div></div>
-      <p className="nav-label">SEU TREINO</p><nav>{navigation.map(({ id, icon: Icon, label }, i) => <button className={`nav-item ${tab === id ? 'active' : ''} ${i === 6 ? 'nav-gap' : ''}`} key={id} onClick={() => setTab(id)}><Icon size={18} /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className="focus-button" disabled={busy} onClick={() => void openFocus()}><Monitor size={18} /><span>Painel de foco<small>Acompanhamento opcional</small></span><ArrowRight size={15} /></button><small>v0.5.0 · seus dados neste computador</small></div>
+      <p className="nav-label">SEU TREINO</p><nav>{navigation.map(({ id, icon: Icon, label }, i) => <button className={`nav-item ${tab === id ? 'active' : ''} ${i === 7 ? 'nav-gap' : ''}`} key={id} onClick={() => setTab(id)}><Icon size={18} /><span>{label}</span></button>)}</nav>
+      <div className="sidebar-foot"><button className="focus-button" disabled={busy} onClick={() => void openFocus()}><Monitor size={18} /><span>Painel de foco<small>Acompanhamento opcional</small></span><ArrowRight size={15} /></button><small>v0.6.0 · seus dados neste computador</small></div>
     </aside>
     <main className="main-content"><header className="topbar"><span>{navigation.find(n => n.id === tab)?.label}</span><div className="top-actions"><span className={`connection-dot ${demo ? 'demo' : ''}`} />{demo ? 'Demonstração' : 'Histórico pessoal'}<button className="text-link" disabled={busy} onClick={() => { setDemo(!demo); setSelectedId(undefined) }}>{demo ? 'Ver meus dados' : 'Explorar exemplo'}</button></div></header>
       <div className="content">{demo && <div className="demo-banner"><BookOpen size={18} /><span><strong>Você está explorando um exemplo.</strong> Estes dados não são da sua conta.</span><button onClick={() => setTab('settings')}>Conectar minha conta <ArrowRight size={15} /></button></div>}
@@ -222,6 +224,7 @@ function Coach() {
       {tab === 'my-jax' && <Overview data={data} demo={demo} jaxOnly onMatch={openMatch} onSettings={() => setTab('settings')} onFocus={() => void openFocus()} />}
       {tab === 'history' && <History key={`${demo}-${selectedId}`} data={data} initialId={selectedId} busy={busy} onAnalyze={m => void analyze(m).catch(() => {})} onNote={note} onGuidedReview={guidedReview} />}
       {tab === 'performance' && <Performance data={data} demo={demo} busy={busy} onStartBlock={startTrainingBlock} onClearBlock={clearTrainingBlock} />}
+      {tab === 'advisor' && <Advisor data={data} demo={demo} />}
       {tab === 'patterns' && <Patterns key={String(demo)} data={data} busy={busy} onGoal={text => goal(text).catch(() => {})} onMatch={openMatch} />}
       {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} onTest={testConnection} onImport={importBackup} onSwitchAccount={switchAccount} />}
       {tab === 'videos' && <Videos key={String(demo)} data={data} directory={settings.outplayedDirectory} busy={busy} folders={environment?.folders ?? []} onScan={f => scan(f).catch(() => {})} onSaveRecording={r => updateRecording(r).catch(() => {})} onClip={(p, s) => clip(p, s).catch(() => {})} />}

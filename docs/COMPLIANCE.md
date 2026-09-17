@@ -19,6 +19,7 @@ Este documento descreve decisões de implementação, não garante aprovação, 
 6. Originais de vídeo são lidos apenas para metadados/recortes e preservados. Nenhum vídeo é enviado a serviços externos.
 7. Credenciais não são distribuídas no binário nem no código. Banco e exportações contêm dados pessoais de treino e precisam ser protegidos pelo usuário.
 8. Indicadores de performance e blocos de treino usam partidas encerradas, Timelines já obtidas e check-ins escritos pelo jogador. O objetivo é medir evolução, não dar nota automática ou alterar a partida atual.
+9. O Assessor pré-jogo usa somente campeões que o usuário informa antes da partida, regras locais e sua própria amostra histórica. Ele entrega alternativas de build/runa com justificativa; não lê estado dinâmico da sessão para decidir por ele.
 
 ## Limitações e responsabilidade
 

@@ -1,10 +1,10 @@
-# Jax Coach · 0.5.0
+# Jax Coach · 0.6.0
 
 Coach pessoal para Windows, local-first, inicialmente focado em Jax/top. Revise partidas encerradas, guarde anotações e leve um objetivo histórico para o segundo monitor. Não controla o jogo nem acompanha a partida em segundo plano.
 
 ## Usar sem programar
 
-Abra o instalador `outputs/Jax-Coach-0.5.0-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
+Abra o instalador `outputs/Jax-Coach-0.6.0-x64-setup.exe`. O app abre em **Demonstração** quando não existe histórico pessoal. Não precisa de LoL, Riot API ou IA para explorar o exemplo. O exemplo nunca é salvo como partidas da sua conta.
 
 1. **Histórico:** selecione uma partida, veja eventos, hipóteses e escreva sua própria anotação.
 2. **Performance:** veja seus indicadores de Jax/top e comece um bloco de 10 partidas com um único objetivo.
@@ -19,6 +19,7 @@ O histórico, as revisões e as anotações importados ficam neste PC. A chave f
 
 - Dashboard calculado da amostra importada; remakes não contam nas médias.
 - Performance de Jax/top com CS aos 10 minutos, mortes antes dos 10, vitórias e amostra revisada.
+- Assessor pré-jogo com três alternativas de runas/itens baseadas na composição informada, explicação e contexto do seu histórico.
 - Blocos de treino de 10 partidas com um objetivo por vez e check-in pós-jogo.
 - Histórico com busca e filtros; reconhece o campeão real e o adversário da mesma rota quando informado pela Riot.
 - Meu Jax considera apenas Jax/top e mostra quantidade de partidas em cada matchup.
@@ -27,6 +28,7 @@ O histórico, as revisões e as anotações importados ficam neste PC. A chave f
 - Padrões agregados requerem pelo menos 3 partidas Jax/top revisadas e repetição em 2. São tendências de triagem, não causalidade ou probabilidade estatística.
 - Notas e objetivo editáveis; exportação JSON da biblioteca e dos logs.
 - Revisão rápida pós-partida com três perguntas: o que aconteceu, qual decisão mudaria e o que testar depois.
+- Assessor usa apenas campeões informados antes da partida; não gera ordens a partir de eventos, cooldowns ou dados ocultos do jogo.
 - Biblioteca SQLite persistente e cache local das Timelines. Demonstração isolada, temporária.
 - Janela de foco com acompanhamento seguro opcional; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta. A leitura periódica é resumida e não leva ouro, vida, cooldowns, eventos, runas ou dados brutos para a ficha ou para a IA.
 
@@ -69,8 +71,10 @@ React + TypeScript/Vite, Tauri 2/Rust, SQLite/rusqlite. Não há servidor interm
 - `src/domain/analysis.ts`: heurísticas rastreáveis por IDs de fatos.
 - `src/domain/library.ts`: métricas, agregação histórica e biblioteca versionada.
 - `src/domain/performance.ts` e `src/components/Performance.tsx`: indicadores de Jax/top, objetivos e blocos de treino de 10 partidas.
+- `src/domain/advisor.ts` e `src/components/Advisor.tsx`: assessor pré-jogo local, explicável e desacoplado do contrato `AIProvider`.
 - `src/providers/`: contrato AIProvider, regras locais como padrão, mock preservado para testes.
 - `src/prompts/`: prompts versionados para futura integração de IA; não há chamada a modelo externo nesta versão.
+- `src/providers/AIProvider.ts`: contrato desacoplado para revisão pós-jogo e assessor pré-jogo; a implementação atual é local e explicável.
 - `src-tauri/src/riot.rs`: Account-v1 e Match-v5, chamadas oficiais com timeout e mensagens de erro sem credenciais.
 - `src-tauri/src/live.rs` e `src/services/liveClient.ts`: leitura local opt-in do contexto, acompanhamento seguro resumido e consulta manual dos endpoints do League Client; nenhum dado bruto chega ao foco ou à IA.
 - `src-tauri/src/persistence.rs`: biblioteca JSON em registro SQLite e cache das Timelines; migrações idempotentes 001 e 002. As tabelas normalizadas da primeira migração são preservadas, mas a biblioteca v2 usa o snapshot como fonte de verdade.

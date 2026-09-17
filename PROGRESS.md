@@ -86,3 +86,11 @@
 - [x] Histórico ganhou revisão rápida pós-partida: resultado do objetivo, o que aconteceu, primeira decisão a mudar e próximo teste.
 - [x] Check-ins ficam associados às partidas do bloco e aparecem no acompanhamento do progresso.
 - [x] 20 testes TypeScript passaram após a rodada; build web verificado.
+
+## 2026-09-17 · assessor pré-jogo de composição · versão 0.6.0
+
+- [x] Nova aba Assessor para informar adversário da rota e composição visível antes da partida.
+- [x] Contrato `AIProvider` ganhou recomendação pré-jogo; o provider local produz três alternativas transparentes de runas e itens.
+- [x] Cada alternativa explica por que considerar, quando usar e qual cuidado observar; o histórico pessoal do matchup aparece como contexto.
+- [x] Assessor não consulta eventos, cooldowns, vida, ouro ou dados ocultos durante a partida e não dita ações.
+- [x] 21 testes TypeScript + 4 testes Rust passaram; instalador Windows 0.6.0 e bundle de código foram regenerados.

@@ -74,4 +74,4 @@ export interface AppSettings {
   safeMode: SafeModeSettings
 }
 
-export type CoachTab = 'dashboard' | 'history' | 'my-jax' | 'performance' | 'patterns' | 'videos' | 'settings' | 'diagnostics'
+export type CoachTab = 'dashboard' | 'history' | 'my-jax' | 'performance' | 'advisor' | 'patterns' | 'videos' | 'settings' | 'diagnostics'

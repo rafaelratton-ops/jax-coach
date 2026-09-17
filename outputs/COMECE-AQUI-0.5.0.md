@@ -16,4 +16,6 @@ O app guarda o progresso no computador e mostra quantas partidas já entraram no
 
 O **Painel de foco** continua disponível no segundo monitor. O **Acompanhamento seguro** é opcional, iniciado por você e mostra somente fatos resumidos do League Client local.
 
+Para escolher runas e itens antes da partida, abra a aba **Assessor**, informe o adversário e os campeões que você conhece e clique em **Gerar opções**. O app mostra três planos possíveis; escolha um e confirme o patch no jogo.
+
 Para testar sem LoL ou chave Riot, use a **Demonstração**. Para importar suas partidas encerradas, conecte sua conta em **Configurações**. Nunca envie sua chave pelo chat.

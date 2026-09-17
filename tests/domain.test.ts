@@ -6,6 +6,7 @@ import { getSafeModeReminders } from '../src/domain/safeMode'
 import { defaultSettings } from '../src/domain/fixtures'
 import { buildMatchupPlan, buildMatchupPlanForOpponent } from '../src/domain/matchup'
 import { jaxPerformance, trainingBlockProgress } from '../src/domain/performance'
+import { buildPreGameAdvice } from '../src/domain/advisor'
 
 describe('recording matcher', () => {
   it('ranks a recording that matches time and duration', () => {
@@ -54,5 +55,14 @@ describe('personal performance', () => {
     expect(progress.games).toHaveLength(3)
     expect(progress.checkedIn).toBe(1)
     expect(progress.complete).toBe(false)
+  })
+})
+
+describe('pre-game advisor', () => {
+  it('offers multiple transparent options from the visible composition', () => {
+    const advice = buildPreGameAdvice({ laneOpponent: 'Teemo', enemyTeam: ['Sejuani', 'Orianna', 'Jhin', 'Nautilus'], allyTeam: [], library: demoLibrary() })
+    expect(advice.options).toHaveLength(3)
+    expect(advice.compositionSummary).toContain('dano mágico')
+    expect(advice.options.every(option => option.runes.length > 0 && option.items.length > 0 && option.reason)).toBe(true)
   })
 })
