@@ -16,4 +16,4 @@ Não envie sua chave pelo chat. Ela não é salva no código, no Git ou no banco
 
 Para levar seu histórico, use **Configurações → Exportar histórico**. No outro computador, use **Importar backup**. O app pede confirmação antes de substituir um histórico existente.
 
-Se ainda aparecer erro, envie somente o texto do erro, sem a chave. Demonstração, histórico de exemplo, anotações, padrões e painel de foco continuam funcionando sem Riot.
+Se ainda aparecer erro, envie somente o texto do erro, sem a chave. Demonstração, histórico de exemplo, anotações, padrões e painel de foco continuam funcionando sem Riot. Ao abrir o painel de foco, escolha manualmente a matchup da partida para ver a ficha estática do Jax com itens, plano de treino e pontos a evitar. O painel não lê a partida atual.

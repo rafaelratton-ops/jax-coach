@@ -8,7 +8,7 @@ Abra o instalador `outputs/Jax-Coach-0.3.0-x64-setup.exe`. O app abre em **Demon
 
 1. **Histórico:** selecione uma partida, veja eventos, hipóteses e escreva sua própria anotação.
 2. **Padrões pessoais:** ajuste o objetivo de treino e consulte a evidência por partida.
-3. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. O conteúdo fica congelado até fechar/reabrir. Escape fecha o painel.
+3. **Painel de foco:** abre uma janela independente, sempre por cima, para arrastar ao segundo monitor. O conteúdo fica congelado até fechar/reabrir. Inclui uma ficha estática de matchup do Jax com itens para considerar, ações de treino e padrões pessoais; você escolhe a matchup no próprio painel. Escape fecha o painel.
 4. **Configurações:** seu Riot ID inicial é `Pula Nuvem#Hope`. Cole uma chave válida somente no campo Chave Riot para importar 5, 10 ou 20 partidas.
 5. **Vídeos:** informe a pasta Outplayed, procure gravações e confira o horário antes de recortar.
 
@@ -24,7 +24,7 @@ O histórico, as revisões e as anotações importados ficam neste PC. A chave f
 - Padrões agregados requerem pelo menos 3 partidas Jax/top revisadas e repetição em 2. São tendências de triagem, não causalidade ou probabilidade estatística.
 - Notas e objetivo editáveis; exportação JSON da biblioteca e dos logs.
 - Biblioteca SQLite persistente e cache local das Timelines. Demonstração isolada, temporária.
-- Janela de foco estática; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta.
+- Janela de foco estática; comandos de sincronização, análise, varredura e recorte bloqueados enquanto estiver aberta. A ficha não consulta a partida atual nem muda por causa de ouro, vida, cooldowns ou posição.
 
 ## Outplayed e FFmpeg
 
@@ -77,7 +77,7 @@ O banco fica na pasta de dados Tauri do identificador `com.jaxcoach.desktop` (no
 
 A API Riot exige chave autorizada. Chaves de desenvolvimento expiram; o app informa a recusa, mas não renova a chave automaticamente. Veja o [portal oficial](https://developer.riotgames.com/). Antes de distribuir uma integração além do uso pessoal, registre o produto e verifique as exigências atuais de aprovação/chave; não distribua uma chave de produção no executável.
 
-IA externa e interpretação automática de vídeo **não estão implementadas**. As revisões atuais usam regras locais. Não há detecção automática de partida em andamento: use sincronização/revisão somente depois do jogo e abra o painel estático antes de jogar. Uma biblioteca comporta uma conta; troca de dono é bloqueada para preservar seu histórico. Não há download automático de FFmpeg nem leitura de arquivos internos do LoL.
+IA externa e interpretação automática de vídeo **não estão implementadas**. As revisões atuais usam regras locais. Não há detecção automática de partida em andamento: use sincronização/revisão somente depois do jogo e abra o painel estático antes de jogar. A matchup é escolhida por você; isso evita transformar o painel em assistência dinâmica. Uma biblioteca comporta uma conta; troca de dono é bloqueada para preservar seu histórico. Não há download automático de FFmpeg nem leitura de arquivos internos do LoL.
 
 Compliance e fontes: [docs/COMPLIANCE.md](docs/COMPLIANCE.md). Não é um produto aprovado ou endossado pela Riot.
 

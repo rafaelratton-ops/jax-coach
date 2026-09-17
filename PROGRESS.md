@@ -54,3 +54,11 @@
 - [x] 16 testes TypeScript + 4 testes Rust passaram após o upgrade.
 - [x] Instalador e diagnóstico preparados para a versão 0.3.0.
 - [x] Troca de conta segura com confirmação, sem apagar o código ou arquivos de vídeo.
+
+## 2026-09-17 · ficha de matchup no modo foco
+
+- [x] Painel de foco ganhou ficha estática dedicada para Jax/top.
+- [x] Matchups presentes no histórico podem ser escolhidos manualmente no segundo monitor.
+- [x] Ficha inclui itens para considerar, ações de treino, pontos a evitar e tamanho da amostra pessoal.
+- [x] Mantido o bloqueio de leitura da partida atual: nenhuma vida, ouro, cooldown, posição, evento ou ordem em tempo real é consultado.
+- [x] 17 testes TypeScript + 4 testes Rust passaram; instalador Windows e bundle Git foram regenerados.
