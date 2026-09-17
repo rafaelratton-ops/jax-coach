@@ -149,6 +149,16 @@ function Coach() {
       tell(`${imported.matches.length} partidas restauradas do backup.`)
     })
   }
+  async function switchAccount() {
+    await work(async () => {
+      if (!personal.matches.length) { tell('Não há histórico pessoal para trocar.'); return }
+      if (!window.confirm('Antes de trocar de conta, exporte seu histórico se quiser guardá-lo. Limpar agora?')) return
+      const blank = emptyLibrary()
+      await saveLibrary(blank)
+      setPersonal(blank); setDemo(false); setSelectedId(undefined)
+      tell('Histórico pessoal limpo. Você pode conectar outra conta em Configurações.')
+    })
+  }
   async function openFocus() {
     if (busy) return
     const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`) }
@@ -169,7 +179,7 @@ function Coach() {
       {tab === 'my-jax' && <Overview data={data} demo={demo} jaxOnly onMatch={openMatch} onSettings={() => setTab('settings')} onFocus={() => void openFocus()} />}
       {tab === 'history' && <History key={`${demo}-${selectedId}`} data={data} initialId={selectedId} busy={busy} onAnalyze={m => void analyze(m).catch(() => {})} onNote={note} />}
       {tab === 'patterns' && <Patterns key={String(demo)} data={data} busy={busy} onGoal={text => goal(text).catch(() => {})} onMatch={openMatch} />}
-      {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} onTest={testConnection} onImport={importBackup} />}
+      {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} onTest={testConnection} onImport={importBackup} onSwitchAccount={switchAccount} />}
       {tab === 'videos' && <Videos key={String(demo)} data={data} directory={settings.outplayedDirectory} busy={busy} folders={environment?.folders ?? []} onScan={f => scan(f).catch(() => {})} onSaveRecording={r => updateRecording(r).catch(() => {})} onClip={(p, s) => clip(p, s).catch(() => {})} />}
       {tab === 'diagnostics' && <Diagnostics data={personal} environment={environment} refresh={() => void refresh()} />}
       </div>

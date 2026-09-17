@@ -53,3 +53,4 @@
 - [x] Backup JSON restaurável com validação de formato, limite de tamanho e bloqueio de chaves.
 - [x] 16 testes TypeScript + 4 testes Rust passaram após o upgrade.
 - [x] Instalador e diagnóstico preparados para a versão 0.3.0.
+- [x] Troca de conta segura com confirmação, sem apagar o código ou arquivos de vídeo.
