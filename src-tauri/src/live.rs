@@ -98,7 +98,7 @@ pub async fn live_match_context() -> Result<LiveMatchContext, String> {
         Err(reason) => {
             return Ok(LiveMatchContext {
                 captured_at,
-                connected: true,
+                connected: false,
                 game_mode: string_field(&game_stats, "gameMode"),
                 champion: None,
                 role: None,
@@ -112,7 +112,7 @@ pub async fn live_match_context() -> Result<LiveMatchContext, String> {
         Err(reason) => {
             return Ok(LiveMatchContext {
                 captured_at,
-                connected: true,
+                connected: false,
                 game_mode: string_field(&game_stats, "gameMode"),
                 champion: None,
                 role: None,
@@ -148,12 +148,16 @@ pub async fn live_match_context() -> Result<LiveMatchContext, String> {
     });
     Ok(LiveMatchContext {
         captured_at,
-        connected: true,
+        connected: own.is_some(),
         game_mode: string_field(&game_stats, "gameMode"),
         champion,
         role,
         opponent_champion,
-        warnings: Vec::new(),
+        warnings: if own.is_some() {
+            Vec::new()
+        } else {
+            vec!["Não foi possível identificar seu jogador na lista local.".to_string()]
+        },
     })
 }
 
