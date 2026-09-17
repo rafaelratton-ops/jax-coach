@@ -7,8 +7,8 @@ import { demoLibrary } from '../domain/demo'
 import { getAIProvider } from '../providers'
 import { extractFacts, type RiotTimeline } from '../domain/review'
 import { storage } from '../services/storage'
-import { desktop, loadLibrary, saveLibrary } from '../services/library'
-import { normalizeRiotId, syncRiotMatches } from '../services/riotApi'
+import { desktop, loadLibrary, readLibraryFile, saveLibrary } from '../services/library'
+import { normalizeRiotId, syncRiotMatches, testRiotConnection } from '../services/riotApi'
 import { log } from '../services/logger'
 import { Overview } from '../components/Overview'
 import { History } from '../components/History'
@@ -88,6 +88,16 @@ function Coach() {
       void refresh()
     })
   }
+  async function testConnection(name: string, tag: string, key: string) {
+    await work(async () => {
+      const riotId = normalizeRiotId(name, tag)
+      const account = await testRiotConnection(riotId.gameName, riotId.tagLine, key)
+      const preferences = { ...settings, riotGameName: account.gameName, riotTagLine: account.tagLine }
+      storage.saveSettings(preferences); setSettings(preferences)
+      tell(`Conexão confirmada para ${account.gameName}#${account.tagLine}. Agora você pode sincronizar as partidas.`)
+      void refresh()
+    })
+  }
   async function analyze(match: MatchSummary) {
     await work(async () => {
       const facts = demo ? data.facts.filter(f => f.matchId === match.id) : extractFacts(match, await invoke<RiotTimeline>('riot_timeline', { matchId: match.id }))
@@ -128,6 +138,17 @@ function Coach() {
       tell('Recorte criado. Use “Abrir pasta dos recortes” para assistir.')
     })
   }
+  async function importBackup(file: File) {
+    await work(async () => {
+      const imported = await readLibraryFile(file)
+      if (personal.matches.length && !window.confirm('Isso substituirá o histórico pessoal deste computador pelo backup escolhido. Continuar?')) return
+      await saveLibrary(imported)
+      setPersonal(imported); setDemo(false)
+      const saved = { ...settings, riotGameName: storage.settings().riotGameName, riotTagLine: storage.settings().riotTagLine }
+      setSettings(saved)
+      tell(`${imported.matches.length} partidas restauradas do backup.`)
+    })
+  }
   async function openFocus() {
     if (busy) return
     const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`) }
@@ -139,7 +160,7 @@ function Coach() {
     <aside className="sidebar"><div className="brand"><span><Crosshair size={23} /></span><div>JAX<strong>COACH</strong><small>MEMÓRIA DE JOGO</small></div></div>
       <div className="profile"><div className="avatar">{settings.riotGameName.slice(0, 1)}</div><div><strong>{settings.riotGameName}</strong><small>#{settings.riotTagLine} · Brasil</small></div></div>
       <p className="nav-label">SEU TREINO</p><nav>{navigation.map(({ id, icon: Icon, label }, i) => <button className={`nav-item ${tab === id ? 'active' : ''} ${i === 5 ? 'nav-gap' : ''}`} key={id} onClick={() => setTab(id)}><Icon size={18} /><span>{label}</span></button>)}</nav>
-      <div className="sidebar-foot"><button className="focus-button" disabled={busy} onClick={() => void openFocus()}><Monitor size={18} /><span>Painel de foco<small>Lembretes históricos</small></span><ArrowRight size={15} /></button><small>v0.2.1 · seus dados neste computador</small></div>
+      <div className="sidebar-foot"><button className="focus-button" disabled={busy} onClick={() => void openFocus()}><Monitor size={18} /><span>Painel de foco<small>Lembretes históricos</small></span><ArrowRight size={15} /></button><small>v0.3.0 · seus dados neste computador</small></div>
     </aside>
     <main className="main-content"><header className="topbar"><span>{navigation.find(n => n.id === tab)?.label}</span><div className="top-actions"><span className={`connection-dot ${demo ? 'demo' : ''}`} />{demo ? 'Demonstração' : 'Histórico pessoal'}<button className="text-link" disabled={busy} onClick={() => { setDemo(!demo); setSelectedId(undefined) }}>{demo ? 'Ver meus dados' : 'Explorar exemplo'}</button></div></header>
       <div className="content">{demo && <div className="demo-banner"><BookOpen size={18} /><span><strong>Você está explorando um exemplo.</strong> Estes dados não são da sua conta.</span><button onClick={() => setTab('settings')}>Conectar minha conta <ArrowRight size={15} /></button></div>}
@@ -148,7 +169,7 @@ function Coach() {
       {tab === 'my-jax' && <Overview data={data} demo={demo} jaxOnly onMatch={openMatch} onSettings={() => setTab('settings')} onFocus={() => void openFocus()} />}
       {tab === 'history' && <History key={`${demo}-${selectedId}`} data={data} initialId={selectedId} busy={busy} onAnalyze={m => void analyze(m).catch(() => {})} onNote={note} />}
       {tab === 'patterns' && <Patterns key={String(demo)} data={data} busy={busy} onGoal={text => goal(text).catch(() => {})} onMatch={openMatch} />}
-      {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} />}
+      {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} onTest={testConnection} onImport={importBackup} />}
       {tab === 'videos' && <Videos key={String(demo)} data={data} directory={settings.outplayedDirectory} busy={busy} folders={environment?.folders ?? []} onScan={f => scan(f).catch(() => {})} onSaveRecording={r => updateRecording(r).catch(() => {})} onClip={(p, s) => clip(p, s).catch(() => {})} />}
       {tab === 'diagnostics' && <Diagnostics data={personal} environment={environment} refresh={() => void refresh()} />}
       </div>

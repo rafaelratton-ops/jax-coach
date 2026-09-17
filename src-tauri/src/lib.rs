@@ -97,6 +97,7 @@ pub fn run() {
             persistence::load_library,
             persistence::save_library,
             riot::riot_sync_matches,
+            riot::riot_test_connection,
             riot::riot_timeline,
             media::scan_outplayed_directory,
             media::detect_environment,

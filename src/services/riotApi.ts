@@ -26,3 +26,9 @@ export async function syncRiotMatches(gameName: string, tagLine: string, apiKey:
   const id = normalizeRiotId(gameName, tagLine)
   return invoke<RiotSyncResult>('riot_sync_matches', { ...id, apiKey, count })
 }
+
+export async function testRiotConnection(gameName: string, tagLine: string, apiKey: string): Promise<RiotAccount> {
+  if (!('__TAURI_INTERNALS__' in window)) throw new Error('O teste Riot precisa ser executado no aplicativo desktop Tauri.')
+  const id = normalizeRiotId(gameName, tagLine)
+  return invoke<RiotAccount>('riot_test_connection', { ...id, apiKey })
+}

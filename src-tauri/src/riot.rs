@@ -121,6 +121,22 @@ fn client() -> Result<reqwest::Client, String> {
         .build()
         .map_err(|_| "Não foi possível preparar a conexão.".into())
 }
+async fn fetch_account(
+    client: &reqwest::Client,
+    game_name: &str,
+    tag_line: &str,
+    key: &str,
+) -> Result<RiotAccount, String> {
+    if game_name.trim().is_empty() || tag_line.trim().is_empty() || key.trim().is_empty() {
+        return Err("Preencha seu Nome, Tag e chave Riot.".into());
+    }
+    let path = format!(
+        "/riot/account/v1/accounts/by-riot-id/{}/{}",
+        urlencoding::encode(game_name.trim()),
+        urlencoding::encode(tag_line.trim().trim_start_matches('#'))
+    );
+    get(client, &path, key.trim()).await
+}
 fn summary(id: String, info: MatchInfo, puuid: &str) -> Result<MatchSummary, String> {
     let player = info
         .participants
@@ -181,16 +197,8 @@ pub async fn riot_sync_matches(
         return Err("Feche o painel de foco antes de sincronizar.".into());
     }
     let key = api_key.trim();
-    if key.is_empty() || game_name.trim().is_empty() || tag_line.trim().is_empty() {
-        return Err("Preencha seu Nome, Tag e chave Riot.".into());
-    }
     let client = client()?;
-    let path = format!(
-        "/riot/account/v1/accounts/by-riot-id/{}/{}",
-        urlencoding::encode(game_name.trim()),
-        urlencoding::encode(tag_line.trim())
-    );
-    let account: RiotAccount = get(&client, &path, key).await?;
+    let account = fetch_account(&client, &game_name, &tag_line, key).await?;
     let ids: Vec<String> = get(
         &client,
         &format!(
@@ -214,6 +222,21 @@ pub async fn riot_sync_matches(
         matches,
         synced_at: chrono::Utc::now().to_rfc3339(),
     })
+}
+#[tauri::command]
+pub async fn riot_test_connection(
+    state: State<'_, AppState>,
+    game_name: String,
+    tag_line: String,
+    api_key: String,
+) -> Result<RiotAccount, String> {
+    if state.focus_active.load(Ordering::SeqCst) {
+        return Err("Feche o painel de foco antes de testar a conexão.".into());
+    }
+    let client = client()?;
+    let account = fetch_account(&client, &game_name, &tag_line, &api_key).await?;
+    *state.riot_key.lock().map_err(|_| "Conexão ocupada")? = Some(api_key.trim().to_string());
+    Ok(account)
 }
 #[tauri::command]
 pub async fn riot_timeline(

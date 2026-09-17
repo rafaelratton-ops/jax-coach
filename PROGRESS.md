@@ -46,3 +46,9 @@
 - [x] Aceita Riot ID colado como `Nome#Tag` ou em campos separados.
 - [x] Mensagens mais claras para chave expirada/recusada, Riot ID inválido e conta sem partidas recentes.
 - [x] Instalador recompilado como 0.2.1.
+
+## 2026-09-17 · upgrade 0.3.0
+
+- [x] Teste de conexão Riot separado da importação, com confirmação da conta antes de buscar partidas.
+- [x] Backup JSON restaurável com validação de formato, limite de tamanho e bloqueio de chaves.
+- [x] Instalador e diagnóstico preparados para a versão 0.3.0.

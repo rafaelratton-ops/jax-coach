@@ -12,7 +12,7 @@ export function Diagnostics({ data, environment, refresh }: { data: Library; env
     ['FFprobe', environment?.ffprobe ? 'Disponível para medir vídeos' : 'Não detectado · duração indisponível'],
     ['Análise', 'Regras locais v2 · sem IA externa nesta versão'],
   ].map(([label, detail]) => <div key={label}><strong>{label}</strong><span>{detail}</span></div>)}</div>
-    <section className="panel"><Heading eyebrow="SUPORTE" title="Registro de atividades" /><button className="secondary" onClick={() => downloadJson('jax-coach-diagnostico.json', { version: '0.2.1', environment, logs: readLogs() })}>Exportar diagnóstico</button><div className="log-list">{readLogs().slice(-12).reverse().map((entry, i) => <p key={i}><time>{new Date(entry.at).toLocaleTimeString('pt-BR')}</time> {entry.event}</p>)}</div></section>
+    <section className="panel"><Heading eyebrow="SUPORTE" title="Registro de atividades" /><button className="secondary" onClick={() => downloadJson('jax-coach-diagnostico.json', { version: '0.3.0', environment, logs: readLogs() })}>Exportar diagnóstico</button><div className="log-list">{readLogs().slice(-12).reverse().map((entry, i) => <p key={i}><time>{new Date(entry.at).toLocaleTimeString('pt-BR')}</time> {entry.event}</p>)}</div></section>
     <p className="legal">Jax Coach is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</p>
   </div>
 }

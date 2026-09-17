@@ -5,7 +5,7 @@ import { demoLibrary } from '../src/domain/demo'
 import { emptyLibrary, historicalPatterns, mergeMatches, stats } from '../src/domain/library'
 import { scoreRecording } from '../src/domain/recordingMatcher'
 import { fixtureMatches, fixtureRecordings } from '../src/domain/fixtures'
-import { loadLibrary, saveLibrary } from '../src/services/library'
+import { loadLibrary, parseLibrary, saveLibrary } from '../src/services/library'
 import { storage } from '../src/services/storage'
 import { normalizeRiotId } from '../src/services/riotApi'
 const match = { ...fixtureMatches[0], participantId: 1, opponentParticipantId: 6, source: 'riot-api' as const }
@@ -47,6 +47,11 @@ describe('review evidence', () => {
   })
 })
 describe('honest statistics and persistence', () => {
+  it('parses and rejects backup files safely', () => {
+    const data = demoLibrary()
+    expect(parseLibrary(JSON.stringify(data))).toEqual(data)
+    expect(() => parseLibrary(JSON.stringify({ ...data, notes: { x: 'RGAPI-secret' } }))).toThrow()
+  })
   it('excludes remakes and represents empty data as unavailable', () => {
     expect(stats([]).winRate).toBeNull()
     const s = stats([fixtureMatches[0], { ...fixtureMatches[1], result: 'remake' }])

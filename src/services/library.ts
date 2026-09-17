@@ -4,12 +4,23 @@ import { emptyLibrary, type Library } from '../domain/library'
 export const desktop = () => '__TAURI_INTERNALS__' in window
 const cacheKey = 'jax-coach.library.v2'
 
+export function parseLibrary(raw: string): Library {
+  const parsed = JSON.parse(raw) as Partial<Library>
+  if (parsed.version !== 2 || !Array.isArray(parsed.matches) || !Array.isArray(parsed.facts) || !parsed.analyses || typeof parsed.analyses !== 'object' || !parsed.notes || typeof parsed.notes !== 'object' || !Array.isArray(parsed.recordings)) {
+    throw new Error('O arquivo local tem formato incompatível. Seus dados foram preservados.')
+  }
+  if (raw.includes('RGAPI-')) throw new Error('O backup contém uma chave Riot. Por segurança, ele não foi importado.')
+  return { ...emptyLibrary(), ...parsed } as Library
+}
+
 export async function loadLibrary(): Promise<Library> {
   const raw = desktop() ? await invoke<string | null>('load_library') : localStorage.getItem(cacheKey)
-  if (!raw) return emptyLibrary()
-  const parsed = JSON.parse(raw) as Library
-  if (parsed.version !== 2 || !Array.isArray(parsed.matches) || !Array.isArray(parsed.facts) || !parsed.analyses || !parsed.notes || !Array.isArray(parsed.recordings)) throw new Error('O arquivo local tem formato incompatível. Seus dados foram preservados.')
-  return { ...emptyLibrary(), ...parsed }
+  return raw ? parseLibrary(raw) : emptyLibrary()
+}
+
+export async function readLibraryFile(file: File): Promise<Library> {
+  if (file.size > 30_000_000) throw new Error('Esse backup é maior que 30 MB.')
+  return parseLibrary(await file.text())
 }
 
 let writeQueue = Promise.resolve()
