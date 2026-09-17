@@ -9,18 +9,18 @@ export interface AnalysisResult {
   summary: string
 }
 
-export function deriveHeuristics(match: MatchSummary, facts: MatchFact[], knownPatterns: MemoryPattern[]): AnalysisResult {
-  const matchFacts = facts.filter((fact) => fact.matchId === match.id)
+// These are review prompts, never claims about intent, cooldowns or wave state.
+export function deriveHeuristics(match: MatchSummary, facts: MatchFact[], _patterns: MemoryPattern[] = []): AnalysisResult {
+  const timeline = facts.filter(fact => fact.matchId === match.id && (match.source === 'fixture' || fact.source !== 'fixture'))
   const heuristics: Heuristic[] = []
-  const earlyE = matchFacts.some((fact) => fact.payload.ability === 'E' && fact.kind === 'death')
-  if (earlyE) {
-    heuristics.push({ id: `derived-${match.id}-e`, title: 'Revisar timing do Counter Strike', category: 'trades', statement: 'A ativação do E apareceu antes do compromisso adversário neste lance.', evidence: matchFacts.filter((fact) => fact.payload.ability === 'E').map((fact) => `${fact.occurredAt} · ${fact.summary}`), confidence: 0.78, occurrences: 1, lastSeen: match.startedAt.slice(0, 10) })
+  const add = (key: string, title: string, statement: string, category: Heuristic['category'], evidence: string[]) => {
+    heuristics.push({ id: `${match.id}-${key}`, title, statement, category, evidence, confidence: 0.5, occurrences: 1, lastSeen: match.startedAt.slice(0, 10) })
   }
-  const waveFact = matchFacts.find((fact) => fact.kind === 'lane-state' || fact.kind === 'wave')
-  if (waveFact) {
-    heuristics.push({ id: `derived-${match.id}-wave`, title: 'Estado de wave para revisar', category: 'wave', statement: waveFact.summary, evidence: [waveFact.occurredAt], confidence: waveFact.confidence, occurrences: 1, lastSeen: match.startedAt.slice(0, 10) })
-  }
-  const historyHint = knownPatterns.find((pattern) => pattern.opponent === match.opponent)
-  const summary = historyHint ? `Este jogo conversa com o padrão “${historyHint.title}”: compare o lance com seu histórico pessoal.` : 'Primeira leitura gerada a partir dos fatos disponíveis; aumente a amostra para formar memória pessoal.'
-  return { matchId: match.id, generatedAt: new Date().toISOString(), model: 'mock-coach-v1', heuristics, timeline: matchFacts, summary }
+  const earlyDeaths = timeline.filter(fact => fact.kind === 'death' && Number(fact.payload.timestampMs) < 600000)
+  if (earlyDeaths.length >= 2) add('early-deaths', 'Revisar as primeiras mortes', `${earlyDeaths.length} mortes antes dos 10 minutos. Veja o vídeo para avaliar wave, visão e recursos disponíveis; a Timeline não explica a causa.`, 'laning', earlyDeaths.map(f => f.id))
+  const cs10 = timeline.find(f => f.payload.type === 'cs10')
+  if (cs10 && Number(cs10.payload.cs) < 60) add('cs-review', 'Revisar farm no início', `${cs10.payload.cs} tropas aos 10 minutos. O corte de 60 é um critério de triagem desta versão, não uma nota de desempenho. Confira o contexto das waves no vídeo.`, 'wave', [cs10.id])
+  if (timeline.some(f => f.kind === 'death') && !earlyDeaths.length) add('late-death', 'Rever uma morte após a lane', 'Abra o lance e anote o que você conseguiria perceber naquele momento.', 'tempo', timeline.filter(f => f.kind === 'death').slice(0, 1).map(f => f.id))
+  return { matchId: match.id, generatedAt: new Date().toISOString(), model: 'regras-locais.v2', heuristics, timeline,
+    summary: timeline.length ? `${timeline.length} eventos e medidas disponíveis. ${heuristics.length} ponto(s) para revisar. Timing de habilidades e intenção exigem vídeo ou anotação sua.` : 'Sem Timeline disponível para esta partida. Ainda não há evidência suficiente para uma revisão.' }
 }

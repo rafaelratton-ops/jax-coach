@@ -38,6 +38,6 @@ export const fixtureRecordings: RecordingCandidate[] = [
 
 export const defaultSettings: AppSettings = {
   riotGameName: 'Pula Nuvem', riotTagLine: 'Hope',
-  outplayedDirectory: 'C:/Users/Player/Videos/Outplayed', riotRegion: 'br1', riotApiConfigured: false, aiConfigured: false, theme: 'dark',
+  outplayedDirectory: '', riotRegion: 'br1', riotApiConfigured: false, aiConfigured: false, theme: 'dark',
   safeMode: { enabled: true, secondMonitor: false, showOnlyHistoricalReminders: true, hideLiveFacts: true }
 }

@@ -1,94 +1,155 @@
-import { useMemo, useState } from 'react'
-import { Activity, Archive, BookOpen, Brain, ChevronRight, CircleHelp, Crosshair, Database, Film, Gauge, Github, LockKeyhole, Menu, RotateCcw, Settings2, ShieldCheck, Sparkles, Sword, Target, TimerReset, Trophy, X } from 'lucide-react'
-import { getSafeModeReminders } from '../domain/safeMode'
-import { fixtureFacts, fixtureMatches, fixturePatterns, fixtureRecordings } from '../domain/fixtures'
-import type { AppSettings, CoachTab, MatchSummary } from '../domain/types'
-import type { AnalysisResult } from '../domain/analysis'
+import { useEffect, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
+import { Activity, Archive, ArrowRight, BookOpen, CheckCircle2, Crosshair, Film, LayoutDashboard, Monitor, Settings2, Sword, X } from 'lucide-react'
+import type { AppSettings, CoachTab, MatchSummary, RecordingCandidate } from '../domain/types'
+import { emptyLibrary, mergeMatches, type Library } from '../domain/library'
+import { demoLibrary } from '../domain/demo'
 import { getAIProvider } from '../providers'
-import { findRecordingsForMatch } from '../services/recordings'
-import { runDiagnostics } from '../services/diagnostics'
-import { log } from '../services/logger'
-import { syncRiotMatches } from '../services/riotApi'
+import { extractFacts, type RiotTimeline } from '../domain/review'
 import { storage } from '../services/storage'
+import { desktop, loadLibrary, saveLibrary } from '../services/library'
+import { syncRiotMatches } from '../services/riotApi'
+import { log } from '../services/logger'
+import { Overview } from '../components/Overview'
+import { History } from '../components/History'
+import { Patterns } from '../components/Patterns'
+import { Settings } from '../components/Settings'
+import { Videos } from '../components/Videos'
+import { Diagnostics, type Environment } from '../components/Diagnostics'
+import { Focus, type FocusSnapshot } from '../components/Focus'
 
-const tabs: Array<{ id: CoachTab; label: string; icon: typeof Gauge }> = [
-  { id: 'dashboard', label: 'Dashboard', icon: Gauge }, { id: 'history', label: 'Histórico', icon: Archive }, { id: 'my-jax', label: 'Meu Jax', icon: Sword }, { id: 'patterns', label: 'Padrões pessoais', icon: Brain }
-]
+const navigation = [
+  { id: 'dashboard', label: 'Visão geral', icon: LayoutDashboard },
+  { id: 'history', label: 'Histórico', icon: Archive },
+  { id: 'my-jax', label: 'Meu Jax', icon: Sword },
+  { id: 'patterns', label: 'Padrões pessoais', icon: BookOpen },
+  { id: 'videos', label: 'Vídeos', icon: Film },
+  { id: 'settings', label: 'Configurações', icon: Settings2 },
+  { id: 'diagnostics', label: 'Diagnóstico', icon: Activity },
+] as const
 
-function App() {
-  const [active, setActive] = useState<CoachTab>('dashboard')
-  const [settings, setSettings] = useState<AppSettings>(storage.settings())
-  const [matches, setMatches] = useState(fixtureMatches)
-  const [selectedMatch, setSelectedMatch] = useState<MatchSummary>(matches[0])
-  const [toast, setToast] = useState<string | null>(null)
-  const [mobileNav, setMobileNav] = useState(false)
-  const [safeOverlay, setSafeOverlay] = useState(false)
-  const [analysisResults, setAnalysisResults] = useState<Record<string, AnalysisResult>>({})
-  const patterns = fixturePatterns
-  const facts = fixtureFacts
-  const recordings = fixtureRecordings
-  const reminders = useMemo(() => getSafeModeReminders(settings, patterns, selectedMatch.opponent), [settings, selectedMatch, patterns])
-
-  function notify(message: string) { log('info', 'ui.notify', message); setToast(message); window.setTimeout(() => setToast(null), 2600) }
-  function updateSettings(next: AppSettings) { setSettings(next); storage.saveSettings(next); notify('Preferências salvas localmente') }
-  async function analyze(match: MatchSummary) {
-    setSelectedMatch(match)
-    log('info', 'analysis.started', match.id)
-    notify('Analisando pós-jogo com o provider local…')
-    const result = await getAIProvider().analyzePostGame({ match, facts, patterns })
-    setAnalysisResults((current) => ({ ...current, [match.id]: result }))
-    setMatches((current) => current.map((item) => item.id === match.id ? { ...item, analyzed: true } : item))
-    log('info', 'analysis.completed', `${match.id} · ${result.heuristics.length} heurística(s)`)
-    notify(`${result.heuristics.length || 1} ponto(s) de revisão preparado(s)`)
-    setActive('history')
-  }
-
-  async function syncRiot(gameName: string, tagLine: string, apiKey: string) {
-    const result = await syncRiotMatches(gameName, tagLine, apiKey, 5)
-    if (result.matches.length) {
-      setMatches(result.matches)
-      setSelectedMatch(result.matches[0])
+export default function App() {
+  return new URLSearchParams(window.location.search).has('focus') ? <Focus /> : <Coach />
+}
+function Coach() {
+  const [tab, setTab] = useState<CoachTab>('dashboard')
+  const [settings, setSettings] = useState<AppSettings>(() => storage.settings())
+  const [personal, setPersonal] = useState<Library>(emptyLibrary)
+  const [demoData, setDemoData] = useState<Library>(demoLibrary)
+  const [demo, setDemo] = useState(true)
+  const [loaded, setLoaded] = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [selectedId, setSelectedId] = useState<string>()
+  const [environment, setEnvironment] = useState<Environment>()
+  const [focus, setFocus] = useState<FocusSnapshot>()
+  const data = demo ? demoData : personal
+  useEffect(() => {
+    let alive = true
+    loadLibrary().then(value => { if (alive) { setPersonal(value); setDemo(!value.matches.length); setLoaded(true) } })
+      .catch(() => { if (alive) setLoadError('Não consegui abrir seu histórico salvo. Feche e reabra o aplicativo para tentar de novo. Seus dados foram preservados.') })
+    return () => { alive = false }
+  }, [])
+  useEffect(() => { void refresh() }, [])
+  async function refresh() {
+    if (desktop()) {
+      try { setEnvironment(await invoke<Environment>('detect_environment')) } catch { setError('Não foi possível verificar os componentes locais.') }
     }
-    setSettings((current) => { const next = { ...current, riotGameName: gameName, riotTagLine: tagLine, riotApiConfigured: true }; storage.saveSettings(next); return next })
-    log('info', 'riot.sync.completed', `${result.matches.length} partida(s)`)
-    return result.matches.length
   }
-
+  function tell(text: string) { setMessage(text); setError(''); log('info', text) }
+  function fail(reason: unknown) { const text = reason instanceof Error ? reason.message : String(reason); setError(text); setMessage(''); log('error', text) }
+  async function persist(next: Library) {
+    if (!loaded) throw new Error('Histórico ainda indisponível.')
+    if (demo) setDemoData(next)
+    else { await saveLibrary(next); setPersonal(next) }
+  }
+  async function work(action: () => Promise<void>) {
+    if (busy) return
+    setBusy(true); setError(''); setMessage('')
+    try { await action() } catch (reason) { fail(reason); throw reason } finally { setBusy(false) }
+  }
+  function saveSettings(next: AppSettings) {
+    try { storage.saveSettings(next); setSettings(next); tell('Preferências salvas.') } catch { fail('Não foi possível salvar as preferências.') }
+  }
+  async function sync(name: string, tag: string, key: string, count: number) {
+    await work(async () => {
+      const result = await syncRiotMatches(name.trim(), tag.trim(), key.trim(), count)
+      if (personal.owner && personal.owner !== result.account.puuid) throw new Error('Esta biblioteca pertence a outra conta. A troca de conta ainda não é suportada; seu histórico foi preservado.')
+      const base = personal
+      const next: Library = { ...base, owner: result.account.puuid, matches: mergeMatches(base.matches, result.matches), syncedAt: result.syncedAt }
+      await saveLibrary(next); setPersonal(next); setDemo(false)
+      const preferences = { ...settings, riotGameName: result.account.gameName, riotTagLine: result.account.tagLine }
+      storage.saveSettings(preferences); setSettings(preferences)
+      tell(`${result.matches.length} partidas consultadas. Seu histórico foi salvo neste computador.`)
+      void refresh()
+    })
+  }
+  async function analyze(match: MatchSummary) {
+    await work(async () => {
+      const facts = demo ? data.facts.filter(f => f.matchId === match.id) : extractFacts(match, await invoke<RiotTimeline>('riot_timeline', { matchId: match.id }))
+      const review = await getAIProvider().analyzePostGame({ match, facts, patterns: [] })
+      const next = { ...data, facts: [...data.facts.filter(f => f.matchId !== match.id), ...facts],
+        analyses: { ...data.analyses, [match.id]: review }, matches: data.matches.map(m => m.id === match.id ? { ...m, analyzed: true } : m) }
+      await persist(next)
+      tell(`Revisão pronta: ${facts.length} eventos e ${review.heuristics.length} pontos para conferir.`)
+    })
+  }
+  function openMatch(match: MatchSummary) { setSelectedId(match.id); setTab('history') }
+  async function note(id: string, text: string) {
+    await work(async () => {
+      if (text.includes('RGAPI-')) throw new Error('Esse campo é para aprendizados; use o campo Chave Riot em Configurações.')
+      await persist({ ...data, notes: { ...data.notes, [id]: text } }); tell('Anotação salva.')
+    })
+  }
+  async function goal(text: string) {
+    await work(async () => { await persist({ ...data, goal: text.trim() }); tell('Objetivo de treino salvo.') })
+  }
+  async function scan(folder: string) {
+    await work(async () => {
+      const recordings = await invoke<RecordingCandidate[]>('scan_outplayed_directory', { directory: folder })
+      const existing = new Map(personal.recordings.map(r => [r.path, r]))
+      for (const r of recordings) existing.set(r.path, existing.get(r.path)?.timeSource === 'manual' ? existing.get(r.path)! : r)
+      const next = { ...personal, recordings: [...existing.values()] }
+      await saveLibrary(next); setPersonal(next); setDemo(false)
+      saveSettings({ ...settings, outplayedDirectory: folder })
+      tell(`${recordings.length} vídeos encontrados. Originais preservados.`)
+    })
+  }
+  async function updateRecording(recording: RecordingCandidate) {
+    await work(async () => { await persist({ ...data, recordings: data.recordings.map(r => r.path === recording.path ? recording : r) }); tell('Horário da gravação confirmado.') })
+  }
+  async function clip(path: string, start: number) {
+    await work(async () => {
+      await invoke<string>('create_clip', { sourcePath: path, startSeconds: start, durationSeconds: 45 })
+      tell('Recorte criado. Use “Abrir pasta dos recortes” para assistir.')
+    })
+  }
+  async function openFocus() {
+    if (busy) return
+    const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`) }
+    try { if (desktop()) await invoke('open_focus', { snapshot }); else setFocus(snapshot) } catch (reason) { fail(reason) }
+  }
+  if (loadError) return <div className="startup"><h1>Seu histórico está protegido.</h1><p>{loadError}</p><button onClick={() => window.location.reload()}>Tentar novamente</button></div>
+  if (!loaded) return <div className="startup"><Crosshair size={38} /><h1>Abrindo seu coach…</h1></div>
   return <div className="app-shell">
-    <aside className={`sidebar ${mobileNav ? 'sidebar-open' : ''}`}>
-      <div className="brand"><div className="brand-mark"><Crosshair size={20} /></div><div><strong>JAX<span>COACH</span></strong><small>memória de jogo</small></div><button className="mobile-close" onClick={() => setMobileNav(false)}><X size={18} /></button></div>
-      <div className="profile-card"><div className="avatar">R</div><div><strong>Rafael</strong><span>Solo queue · BR</span></div><span className="status-dot" /></div>
-      <nav className="main-nav">{tabs.map(({ id, label, icon: Icon }) => <button key={id} className={active === id ? 'nav-item active' : 'nav-item'} onClick={() => { setActive(id); setMobileNav(false) }}><Icon size={18} /><span>{label}</span>{active === id && <ChevronRight size={15} className="nav-chevron" />}</button>)}</nav>
-      <div className="nav-divider" />
-      <nav className="main-nav secondary"><button className={active === 'settings' ? 'nav-item active' : 'nav-item'} onClick={() => setActive('settings')}><Settings2 size={18} /><span>Configurações</span></button><button className={active === 'diagnostics' ? 'nav-item active' : 'nav-item'} onClick={() => setActive('diagnostics')}><CircleHelp size={18} /><span>Diagnostics</span></button></nav>
-      <div className="sidebar-bottom"><div className="safe-badge"><ShieldCheck size={16} /><span><strong>Live safe mode</strong><small>{settings.safeMode.enabled ? 'Ativo e protegido' : 'Desativado'}</small></span><span className={settings.safeMode.enabled ? 'toggle on' : 'toggle'} /></div><a className="github-link" href="https://github.com" target="_blank" rel="noreferrer"><Github size={15} /> repositório do projeto <ChevronRight size={14} /></a><small className="version">v0.1.0 · local-first</small></div>
+    <aside className="sidebar"><div className="brand"><span><Crosshair size={23} /></span><div>JAX<strong>COACH</strong><small>MEMÓRIA DE JOGO</small></div></div>
+      <div className="profile"><div className="avatar">{settings.riotGameName.slice(0, 1)}</div><div><strong>{settings.riotGameName}</strong><small>#{settings.riotTagLine} · Brasil</small></div></div>
+      <p className="nav-label">SEU TREINO</p><nav>{navigation.map(({ id, icon: Icon, label }, i) => <button className={`nav-item ${tab === id ? 'active' : ''} ${i === 5 ? 'nav-gap' : ''}`} key={id} onClick={() => setTab(id)}><Icon size={18} /><span>{label}</span></button>)}</nav>
+      <div className="sidebar-foot"><button className="focus-button" disabled={busy} onClick={() => void openFocus()}><Monitor size={18} /><span>Painel de foco<small>Lembretes históricos</small></span><ArrowRight size={15} /></button><small>v0.2.0 · seus dados neste computador</small></div>
     </aside>
-    {mobileNav && <div className="mobile-scrim" onClick={() => setMobileNav(false)} />}
-    <main className="main-content"><header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu size={22} /></button><div><p className="eyebrow">SESSÃO DE TREINO</p><h1>{tabs.find((tab) => tab.id === active)?.label ?? (active === 'settings' ? 'Configurações' : 'Diagnostics')}</h1></div><div className="topbar-actions"><span className="fixture-chip"><Database size={14} /> {settings.riotApiConfigured ? 'Riot sincronizada' : 'Modo fixture'}</span><button className="icon-button" title="Resetar fixtures" onClick={() => { storage.resetFixtures(); setSettings(storage.settings()); setMatches(fixtureMatches); setSelectedMatch(fixtureMatches[0]); notify('Fixtures restauradas') }}><RotateCcw size={17} /></button><div className="avatar mini">R</div></div></header><div className="content-scroll">{active === 'dashboard' && <Dashboard matches={matches} patterns={patterns} reminders={reminders} onAnalyze={analyze} onOpenHistory={() => setActive('history')} onOpenSafeMode={() => setSafeOverlay(true)} />}{active === 'history' && <History matches={matches} selected={selectedMatch} recordings={recordings} analysis={analysisResults[selectedMatch.id]} onSelect={setSelectedMatch} onAnalyze={analyze} />}{active === 'my-jax' && <MyJax matches={matches} patterns={patterns} />}{active === 'patterns' && <Patterns patterns={patterns} />}{active === 'settings' && <Settings settings={settings} onSave={updateSettings} onRiotSync={syncRiot} />}{active === 'diagnostics' && <Diagnostics settings={settings} onRefresh={() => notify('Diagnostics atualizados')} />}</div></main>{safeOverlay && <SafeModeOverlay reminders={reminders} onClose={() => setSafeOverlay(false)} />}{toast && <div className="toast"><Sparkles size={16} />{toast}</div>}
+    <main className="main-content"><header className="topbar"><span>{navigation.find(n => n.id === tab)?.label}</span><div className="top-actions"><span className={`connection-dot ${demo ? 'demo' : ''}`} />{demo ? 'Demonstração' : 'Histórico pessoal'}<button className="text-link" disabled={busy} onClick={() => { setDemo(!demo); setSelectedId(undefined) }}>{demo ? 'Ver meus dados' : 'Explorar exemplo'}</button></div></header>
+      <div className="content">{demo && <div className="demo-banner"><BookOpen size={18} /><span><strong>Você está explorando um exemplo.</strong> Estes dados não são da sua conta.</span><button onClick={() => setTab('settings')}>Conectar minha conta <ArrowRight size={15} /></button></div>}
+      {(message || error) && <div className={`notice ${error ? 'error' : ''}`} role={error ? 'alert' : 'status'}>{!error && <CheckCircle2 size={18} />}<span>{error || message}</span><button aria-label="Fechar mensagem" onClick={() => { setError(''); setMessage('') }}><X size={17} /></button></div>}
+      {tab === 'dashboard' && <Overview data={data} demo={demo} onMatch={openMatch} onSettings={() => setTab('settings')} onFocus={() => void openFocus()} />}
+      {tab === 'my-jax' && <Overview data={data} demo={demo} jaxOnly onMatch={openMatch} onSettings={() => setTab('settings')} onFocus={() => void openFocus()} />}
+      {tab === 'history' && <History key={`${demo}-${selectedId}`} data={data} initialId={selectedId} busy={busy} onAnalyze={m => void analyze(m).catch(() => {})} onNote={note} />}
+      {tab === 'patterns' && <Patterns key={String(demo)} data={data} busy={busy} onGoal={text => goal(text).catch(() => {})} onMatch={openMatch} />}
+      {tab === 'settings' && <Settings data={personal} settings={settings} busy={busy} onSave={saveSettings} onSync={sync} />}
+      {tab === 'videos' && <Videos key={String(demo)} data={data} directory={settings.outplayedDirectory} busy={busy} folders={environment?.folders ?? []} onScan={f => scan(f).catch(() => {})} onSaveRecording={r => updateRecording(r).catch(() => {})} onClip={(p, s) => clip(p, s).catch(() => {})} />}
+      {tab === 'diagnostics' && <Diagnostics data={personal} environment={environment} refresh={() => void refresh()} />}
+      </div>
+    </main>{focus && <div className="focus-backdrop" role="dialog" aria-label="Painel de foco" aria-modal="true"><Focus snapshot={focus} onClose={() => setFocus(undefined)} /></div>}
   </div>
 }
-
-function SectionHeader({ eyebrow, title, detail, action }: { eyebrow: string; title: string; detail?: string; action?: React.ReactNode }) { return <div className="section-header"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2>{detail && <p className="section-detail">{detail}</p>}</div>{action}</div> }
-
-function Dashboard({ matches, patterns, reminders, onAnalyze, onOpenHistory, onOpenSafeMode }: { matches: MatchSummary[]; patterns: typeof fixturePatterns; reminders: ReturnType<typeof getSafeModeReminders>; onAnalyze: (match: MatchSummary) => void; onOpenHistory: () => void; onOpenSafeMode: () => void }) {
-  const latest = matches[0]
-  return <div className="page dashboard-page"><div className="hero-grid"><div className="hero-card"><div className="hero-top"><div><p className="eyebrow accent">SEU FOCO AGORA</p><h2>Jax <span>·</span> Top lane</h2><p>Coaching baseado nos seus jogos, não em decisões ao vivo.</p></div><div className="champion-orb"><Sword size={30} /></div></div><div className="hero-metrics"><div><span>Win rate (amostra)</span><strong>58.3%</strong><small>+6.1% vs. 30 dias</small></div><div><span>Jogos analisados</span><strong>24</strong><small>8 padrões ativos</small></div><div><span>Próximo review</span><strong>12 min</strong><small>foco: trades</small></div></div></div><div className="safe-hero-card"><div className="safe-icon"><LockKeyhole size={21} /></div><div><p className="eyebrow">SEGUNDO MONITOR</p><h3>Modo seguro ativo</h3><p>Somente lembretes históricos pessoais. Sem leitura de memória, scraping ou callouts de partida.</p></div><button className="text-button" onClick={onOpenHistory}>Ver detalhes <ChevronRight size={14} /></button></div></div><div className="dashboard-columns"><section><SectionHeader eyebrow="ÚLTIMA PARTIDA" title="Seu review mais recente" action={<button className="ghost-button" onClick={onOpenHistory}>Ver histórico <ChevronRight size={15} /></button>} /><div className="match-review-card"><div className="match-heading"><div className="champion-badge">J</div><div><strong>Jax <span className="muted">vs.</span> {latest.opponent}</strong><small>{new Date(latest.startedAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })} · {Math.round(latest.durationSeconds / 60)} min</small></div><span className={`result ${latest.result}`}>{latest.result === 'win' ? 'Vitória' : 'Derrota'}</span></div><div className="review-stat-row"><div><span>KDA</span><strong>{latest.kda}</strong></div><div><span>CS</span><strong>{latest.cs}</strong></div><div><span>Fonte</span><strong className="source"><Activity size={14} /> Timeline</strong></div></div><div className="review-callout"><div className="callout-icon"><Target size={17} /></div><div><strong>Ponto para guardar</strong><p>Seu E foi usado depois do compromisso da Camille em 4 de 7 lances — o timing melhorou nesta partida.</p></div></div><button className="primary-button" onClick={() => onAnalyze(latest)}><Sparkles size={16} /> Rodar análise pós-jogo</button></div></section><section><SectionHeader eyebrow="MEMÓRIA ATIVA" title="Lembretes para a próxima tela" detail="Gerados a partir do seu histórico pessoal" /><div className="reminder-stack">{reminders.slice(0, 3).map((reminder, index) => <div className="reminder-card" key={reminder.id}><div className="reminder-number">0{index + 1}</div><div><strong>{reminder.title}</strong><p>{reminder.copy}</p><span className="confidence"><span style={{ width: `${reminder.confidence * 100}%` }} />{Math.round(reminder.confidence * 100)}% confiança</span></div></div>)}</div><button className="outline-button full" onClick={onOpenSafeMode}><BookOpen size={16} /> Abrir modo segundo monitor</button></section></div><section className="pattern-strip"><div><p className="eyebrow">PADRÃO EM DESTAQUE</p><h3>{patterns[0].title}</h3><p>{patterns[0].statement}</p></div><div className="pattern-score"><strong>82%</strong><span>confiança</span><div className="score-bar"><i style={{ width: '82%' }} /></div></div></section></div>
-}
-
-function History({ matches, selected, recordings, analysis, onSelect, onAnalyze }: { matches: MatchSummary[]; selected: MatchSummary; recordings: typeof fixtureRecordings; analysis?: AnalysisResult; onSelect: (match: MatchSummary) => void; onAnalyze: (match: MatchSummary) => void }) { const linked = findRecordingsForMatch(selected, recordings); return <div className="page"><SectionHeader eyebrow="REPLAY DA SUA EVOLUÇÃO" title="Histórico de partidas" detail="Cada partida vira memória apenas depois do apito final." /><div className="history-layout"><div className="match-list">{matches.map((match) => <button key={match.id} className={`match-row ${selected.id === match.id ? 'selected' : ''}`} onClick={() => onSelect(match)}><div className="champion-badge small">J</div><div className="match-row-main"><strong>Jax <span className="muted">vs.</span> {match.opponent}</strong><small>{new Date(match.startedAt).toLocaleDateString('pt-BR')} · {Math.round(match.durationSeconds / 60)} min</small></div><span className={`result ${match.result}`}>{match.result === 'win' ? 'W' : 'L'}</span><ChevronRight size={16} /></button>)}</div><div className="match-detail"><div className="detail-header"><div><p className="eyebrow">PARTIDA SELECIONADA</p><h3>Jax <span className="muted">vs.</span> {selected.opponent}</h3><p>{selected.id} · {selected.queue}</p></div><span className={`result-pill ${selected.result}`}>{selected.result === 'win' ? 'Vitória' : 'Derrota'}</span></div><div className="detail-grid"><div><span>KDA</span><strong>{selected.kda}</strong></div><div><span>CS/min</span><strong>{(selected.cs / (selected.durationSeconds / 60)).toFixed(1)}</strong></div><div><span>Análise</span><strong>{selected.analyzed ? 'Pronta' : 'Pendente'}</strong></div></div><div className="timeline-box"><div className="timeline-box-head"><strong><Activity size={15} /> Timeline · fatos</strong><span>{selected.analyzed ? '4 eventos' : 'aguardando análise'}</span></div>{factsFor(selected.id).map((fact) => <div className="timeline-event" key={fact.id}><span>{fact.occurredAt}</span><p>{fact.summary}</p><em>{Math.round(fact.confidence * 100)}%</em></div>)}</div>{analysis && <div className="analysis-box"><div className="timeline-box-head"><strong><Brain size={15} /> Análise pós-jogo · {analysis.model}</strong><span>{analysis.heuristics.length} heurística(s)</span></div><p>{analysis.summary}</p>{analysis.heuristics.map((heuristic) => <div className="analysis-item" key={heuristic.id}><strong>{heuristic.title}</strong><span>{Math.round(heuristic.confidence * 100)}% · {heuristic.statement}</span></div>)}</div>}<div className="recording-box"><div><strong><Film size={15} /> Gravações Outplayed</strong><small>Originais nunca são modificados</small></div><span>{linked.length ? `${Math.round(linked[0].confidence * 100)}% match` : 'não associado'}</span></div><button className="primary-button" onClick={() => onAnalyze(selected)}><Sparkles size={16} /> {selected.analyzed ? 'Reanalisar partida' : 'Analisar partida'}</button></div></div></div> }
-
-function factsFor(id: string) { return fixtureFacts.filter((fact) => fact.matchId === id) }
-
-function MyJax({ matches, patterns }: { matches: MatchSummary[]; patterns: typeof fixturePatterns }) { return <div className="page"><SectionHeader eyebrow="MEU JAX" title="O que seus jogos estão dizendo" detail="Uma leitura pessoal, construída a partir de fatos e revisões pós-partida." /><div className="jax-grid"><div className="big-stat-card"><div className="ring-chart"><div><strong>58</strong><span>win rate</span></div></div><div><p className="eyebrow">ÚLTIMOS 30 DIAS</p><h3>Consistência em alta</h3><p>Você está convertendo mais vantagem de lane em objetivos do que no período anterior.</p></div></div><div className="stat-card"><span className="stat-icon green"><Trophy size={18} /></span><p>Melhor matchup</p><strong>Camille <small>· 71%</small></strong><span className="stat-caption">7 jogos na amostra</span></div><div className="stat-card"><span className="stat-icon orange"><TimerReset size={18} /></span><p>Maior oportunidade</p><strong>Wave 3 reset</strong><span className="stat-caption">aparece em 5 partidas</span></div></div><div className="two-col"><section><SectionHeader eyebrow="MÉTRICAS" title="Seus sinais de progresso" /><div className="metric-table">{[['Primeiro recall', '5:42', '+0:38'], ['CS aos 10 min', '72', '+8'], ['Torres por jogo', '1.4', '+0.3'], ['Participação em Arauto', '63%', '+11%']].map(([label, value, delta]) => <div className="metric-row" key={label}><span>{label}</span><strong>{value}</strong><em>{delta}</em></div>)}</div></section><section><SectionHeader eyebrow="AMOSTRA" title="Cobertura dos seus reviews" /><div className="coverage-card"><div className="coverage-ring"><strong>24</strong><span>jogos</span></div><div className="coverage-legend"><div><i className="dot purple" /> Timeline Riot <strong>24</strong></div><div><i className="dot orange" /> Vídeo associado <strong>18</strong></div><div><i className="dot muted-dot" /> Revisão manual <strong>9</strong></div></div></div></section></div><div className="mini-pattern-grid">{patterns.map((p) => <div className="mini-pattern" key={p.id}><span className="tag">{p.category}</span><h4>{p.title}</h4><p>{p.statement}</p><div className="mini-progress"><span style={{ width: `${p.confidence * 100}%` }} /></div><small>{p.occurrences} ocorrências · {Math.round(p.confidence * 100)}% confiança</small></div>)}</div></div> }
-
-function Patterns({ patterns }: { patterns: typeof fixturePatterns }) { return <div className="page"><SectionHeader eyebrow="MEMÓRIA HISTÓRICA" title="Padrões pessoais" detail="Inferências revisáveis, sempre apoiadas nos fatos que as originaram." action={<button className="outline-button"><Database size={15} /> Exportar memória</button>} /><div className="pattern-filters"><span className="filter active">Todos <b>{patterns.length}</b></span><span className="filter">Laning <b>1</b></span><span className="filter">Trades <b>1</b></span><span className="filter">Tempo <b>1</b></span></div><div className="pattern-list">{patterns.map((pattern) => <article className="pattern-card" key={pattern.id}><div className="pattern-card-top"><div><span className="tag">{pattern.category}</span><h3>{pattern.title}</h3></div><div className="pattern-confidence"><strong>{Math.round(pattern.confidence * 100)}%</strong><span>confiança</span></div></div><p>{pattern.statement}</p><div className="evidence-list">{pattern.evidence.map((evidence) => <span key={evidence}><Activity size={13} /> {evidence}</span>)}</div><div className="pattern-card-foot"><span>{pattern.occurrences} ocorrências · último sinal em {new Date(pattern.lastSeen).toLocaleDateString('pt-BR')}</span><button className="text-button">Ver evidências <ChevronRight size={14} /></button></div></article>)}</div></div> }
-
-function Settings({ settings, onSave, onRiotSync }: { settings: AppSettings; onSave: (settings: AppSettings) => void; onRiotSync: (gameName: string, tagLine: string, apiKey: string) => Promise<number> }) { const [draft, setDraft] = useState(settings); const [riotKey, setRiotKey] = useState(''); const [syncState, setSyncState] = useState<string | null>(null); async function testRiot() { setSyncState('Consultando a Riot…'); try { const count = await onRiotSync(draft.riotGameName, draft.riotTagLine, riotKey); setSyncState(`Conexão OK · ${count} partida(s) importada(s)`); setRiotKey(''); } catch (error) { setSyncState(error instanceof Error ? error.message : 'Não foi possível conectar'); } } return <div className="page narrow-page"><SectionHeader eyebrow="PREFERÊNCIAS LOCAIS" title="Configurações" detail="Tudo fica no seu computador. Integrações externas são opt-in." /><div className="settings-section"><div className="settings-heading"><div className="settings-icon purple"><Sparkles size={18} /></div><div><h3>Riot API</h3><p>Seu Riot ID fica salvo localmente; a chave só é usada durante o teste e nunca vai para o Git.</p></div></div><div className="two-inputs"><label className="field-label">Nome do jogador<input value={draft.riotGameName} onChange={(e) => setDraft({ ...draft, riotGameName: e.target.value })} /></label><label className="field-label">Tag<input value={draft.riotTagLine} onChange={(e) => setDraft({ ...draft, riotTagLine: e.target.value })} /></label></div><label className="field-label key-field">Chave de desenvolvimento (fica somente nesta janela)<input type="password" value={riotKey} onChange={(e) => setRiotKey(e.target.value)} placeholder="RGAPI-…" /></label><div className="riot-actions"><button className="outline-button" onClick={testRiot} disabled={!riotKey.trim()}><Activity size={15} /> Testar e sincronizar 5 partidas</button>{syncState && <span className={syncState.startsWith('Conexão OK') ? 'sync-ok' : 'sync-message'}>{syncState}</span>}</div><p className="field-help">A chave não é persistida nem enviada para outro serviço. No modo web, use o app desktop Tauri para executar a sincronização.</p></div><div className="settings-section"><div className="settings-heading"><div className="settings-icon"><Film size={18} /></div><div><h3>Gravações Outplayed</h3><p>Associe vídeos encerrados por horário e duração, sempre com score de confiança.</p></div></div><label className="field-label">Pasta de gravações<label className="input-with-action"><input value={draft.outplayedDirectory} onChange={(e) => setDraft({ ...draft, outplayedDirectory: e.target.value })} /><button title="Selecionar pasta"><ChevronRight size={16} /></button></label></label><p className="field-help">Exemplo: C:\Users\Player\Videos\Outplayed. O app nunca sobrescreve os arquivos originais.</p></div><div className="settings-section"><div className="settings-heading"><div className="settings-icon blue"><LockKeyhole size={18} /></div><div><h3>Live safe mode</h3><p>O segundo monitor mostra apenas lembretes históricos pessoais.</p></div></div><ToggleRow label="Ativar live safe mode" detail="Bloqueia qualquer dado da sessão atual" checked={draft.safeMode.enabled} onChange={(checked) => setDraft({ ...draft, safeMode: { ...draft.safeMode, enabled: checked } })} /><ToggleRow label="Segundo monitor" detail="Janela compacta sempre no topo" checked={draft.safeMode.secondMonitor} onChange={(checked) => setDraft({ ...draft, safeMode: { ...draft.safeMode, secondMonitor: checked } })} /><ToggleRow label="Ocultar fatos ao vivo" detail="Mantém o painel estritamente histórico" checked={draft.safeMode.hideLiveFacts} onChange={(checked) => setDraft({ ...draft, safeMode: { ...draft.safeMode, hideLiveFacts: checked } })} /></div><div className="settings-section"><div className="settings-heading"><div className="settings-icon purple"><Brain size={18} /></div><div><h3>AIProvider</h3><p>{draft.aiConfigured ? 'Provider externo opt-in' : 'Mock local ativo · análise disponível sem credenciais'}</p></div></div></div><div className="settings-actions"><button className="ghost-button" onClick={() => setDraft(settings)}>Descartar</button><button className="primary-button" onClick={() => onSave(draft)}>Salvar preferências</button></div></div> }
-
-function ToggleRow({ label, detail, checked, onChange }: { label: string; detail: string; checked: boolean; onChange: (checked: boolean) => void }) { return <label className="toggle-row"><span><strong>{label}</strong><small>{detail}</small></span><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /><i className={checked ? 'switch on' : 'switch'}><b /></i></label> }
-
-function Diagnostics({ settings, onRefresh }: { settings: AppSettings; onRefresh: () => void }) { const diagnostics = runDiagnostics(settings); return <div className="page narrow-page"><SectionHeader eyebrow="SAÚDE DO AMBIENTE" title="Diagnostics" detail="Verificações locais e de integração para você saber o que está ativo." action={<button className="outline-button" onClick={onRefresh}><RotateCcw size={15} /> Atualizar</button>} /><div className="diag-summary"><div className="diag-summary-icon"><ShieldCheck size={21} /></div><div><strong>{diagnostics.filter((d) => d.status === 'ok').length} de {diagnostics.length} checks verdes</strong><p>O app funciona offline com as fixtures. Nada é enviado sem opt-in.</p></div></div><div className="diagnostic-list">{diagnostics.map((diagnostic) => <div className="diagnostic-row" key={diagnostic.id}><span className={`diag-dot ${diagnostic.status}`} /><div><strong>{diagnostic.label}</strong><p>{diagnostic.detail}</p></div><span className={`diag-label ${diagnostic.status}`}>{diagnostic.status === 'ok' ? 'OK' : diagnostic.status === 'warn' ? 'Atenção' : 'Bloqueado'}</span></div>)}</div><div className="compliance-note"><ShieldCheck size={18} /><div><strong>Guardrails Riot documentados</strong><p>Sem scraping de sites de terceiros, leitura de memória, DLL injection, automação de input ou informação oculta. A IA pesada só roda depois do jogo.</p></div></div></div> }
-
-function SafeModeOverlay({ reminders, onClose }: { reminders: ReturnType<typeof getSafeModeReminders>; onClose: () => void }) { return <div className="overlay-backdrop" role="dialog" aria-modal="true"><div className="safe-overlay"><div className="safe-overlay-head"><div><p className="eyebrow accent">SEGUNDO MONITOR · SEGURO</p><h2>Lembretes históricos</h2></div><button className="icon-button" onClick={onClose}><X size={18} /></button></div><div className="safe-overlay-status"><ShieldCheck size={17} /><span>Sem dados da partida atual · sem callouts</span></div><p className="safe-overlay-intro">Use esta tela como uma âncora de treino. Ela só recupera padrões que já apareceram nos seus jogos encerrados.</p><div className="overlay-reminders">{reminders.map((reminder, index) => <div className="overlay-reminder" key={reminder.id}><span>0{index + 1}</span><div><strong>{reminder.title}</strong><p>{reminder.copy}</p><small>{Math.round(reminder.confidence * 100)}% confiança histórica</small></div></div>)}</div><button className="outline-button full" onClick={onClose}>Fechar modo segundo monitor</button></div></div> }
-
-export default App

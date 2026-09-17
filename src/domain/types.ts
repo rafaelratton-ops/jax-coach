@@ -30,6 +30,8 @@ export interface MemoryPattern extends Heuristic {
 }
 
 export interface MatchSummary {
+  participantId?: number
+  opponentParticipantId?: number
   id: string
   startedAt: string
   durationSeconds: number
@@ -45,6 +47,7 @@ export interface MatchSummary {
 }
 
 export interface RecordingCandidate {
+  timeSource?: 'metadata' | 'estimated' | 'manual' | 'fixture'
   path: string
   startedAt: string
   durationSeconds: number
@@ -71,4 +74,4 @@ export interface AppSettings {
   safeMode: SafeModeSettings
 }
 
-export type CoachTab = 'dashboard' | 'history' | 'my-jax' | 'patterns' | 'settings' | 'diagnostics'
+export type CoachTab = 'dashboard' | 'history' | 'my-jax' | 'patterns' | 'videos' | 'settings' | 'diagnostics'

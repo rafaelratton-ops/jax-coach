@@ -1,6 +1,6 @@
 [package]
 name = "jax-coach"
-version = "0.1.0"
+version = "0.2.0"
 description = "Coach pessoal local-first para League of Legends"
 authors = ["Jax Coach"]
 edition = "2021"
@@ -21,6 +21,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 urlencoding = "2"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+tokio = { version = "1", features = ["time"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

@@ -17,7 +17,10 @@ function write<T>(key: string, value: T) {
 }
 
 export const storage = {
-  settings: () => read<AppSettings>(KEYS.settings, defaultSettings),
+  settings: (): AppSettings => {
+    const saved = read<Partial<AppSettings>>(KEYS.settings, {})
+    return { ...defaultSettings, ...saved, safeMode: { ...defaultSettings.safeMode, ...saved.safeMode } }
+  },
   saveSettings: (value: AppSettings) => write(KEYS.settings, value),
   matches: () => read<MatchSummary[]>(KEYS.matches, fixtureMatches),
   facts: () => read<MatchFact[]>(KEYS.facts, fixtureFacts),

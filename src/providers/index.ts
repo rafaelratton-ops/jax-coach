@@ -1,9 +1,9 @@
 import type { AIProvider } from './AIProvider'
-import { MockAIProvider } from './MockAIProvider'
+import { LocalRulesProvider } from './LocalRulesProvider'
 
-const mock = new MockAIProvider()
+const local = new LocalRulesProvider()
 
 export function getAIProvider(): AIProvider {
   // External providers can be registered here without coupling the UI to a vendor SDK.
-  return mock
+  return local
 }
