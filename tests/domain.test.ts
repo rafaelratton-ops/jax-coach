@@ -3,6 +3,7 @@ import { fixtureMatches, fixtureRecordings, fixturePatterns } from '../src/domai
 import { matchRecordings } from '../src/domain/recordingMatcher'
 import { getSafeModeReminders } from '../src/domain/safeMode'
 import { defaultSettings } from '../src/domain/fixtures'
+import { buildMatchupPlan } from '../src/domain/matchup'
 
 describe('recording matcher', () => {
   it('ranks a recording that matches time and duration', () => {
@@ -16,5 +17,15 @@ describe('safe mode', () => {
     const reminders = getSafeModeReminders(defaultSettings, fixturePatterns, 'Camille')
     expect(reminders).toHaveLength(1)
     expect(reminders[0].copy).toContain('histórico')
+  })
+})
+
+describe('focus matchup plan', () => {
+  it('uses the latest Jax matchup and marks it as static', () => {
+    const plan = buildMatchupPlan(fixtureMatches, true)
+    expect(plan?.opponent).toBe('Camille')
+    expect(plan?.sampleSize).toBe(1)
+    expect(plan?.sourceLabel).toContain('não é a partida atual')
+    expect(plan?.actions.join(' ')).toContain('Counter Strike')
   })
 })
