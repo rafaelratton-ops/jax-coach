@@ -25,7 +25,7 @@ describe('focus matchup plan', () => {
     const plan = buildMatchupPlan(fixtureMatches, true)
     expect(plan?.opponent).toBe('Camille')
     expect(plan?.sampleSize).toBe(1)
-    expect(plan?.sourceLabel).toContain('não é a partida atual')
+    expect(plan?.sourceLabel).toContain('ficha estática')
     expect(plan?.actions.join(' ')).toContain('Counter Strike')
   })
 })

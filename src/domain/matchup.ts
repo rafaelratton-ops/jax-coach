@@ -37,19 +37,24 @@ const plans: Record<string, Omit<MatchupPlan, 'opponent' | 'sampleSize' | 'sourc
   },
 }
 
-export function buildMatchupPlan(matches: MatchSummary[], demo: boolean): MatchupPlan | undefined {
-  const jaxMatches = matches
-    .filter(match => match.champion === 'Jax' && match.role === 'TOP' && match.opponent.trim())
-    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
-  const latest = jaxMatches[0]
-  if (!latest) return undefined
-  const opponent = latest.opponent.trim()
+function planForOpponent(opponent: string, sampleSize: number, demo: boolean): MatchupPlan {
   const base = plans[opponent] ?? plans.default
-  const sampleSize = jaxMatches.filter(match => match.opponent.trim().toLowerCase() === opponent.toLowerCase()).length
   return {
     opponent,
     sampleSize,
-    sourceLabel: demo ? 'Exemplo fixo · não é a partida atual' : 'Último matchup no seu histórico · não é leitura ao vivo',
+    sourceLabel: demo ? 'Exemplo fixo · ficha estática' : 'Amostra do seu histórico · ficha estática',
     ...base,
   }
+}
+
+export function buildMatchupPlans(matches: MatchSummary[], demo: boolean): MatchupPlan[] {
+  const jaxMatches = matches
+    .filter(match => match.champion === 'Jax' && match.role === 'TOP' && match.opponent.trim())
+    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+  const opponents = [...new Set(jaxMatches.map(match => match.opponent.trim()))]
+  return opponents.map(opponent => planForOpponent(opponent, jaxMatches.filter(match => match.opponent.trim().toLowerCase() === opponent.toLowerCase()).length, demo))
+}
+
+export function buildMatchupPlan(matches: MatchSummary[], demo: boolean): MatchupPlan | undefined {
+  return buildMatchupPlans(matches, demo)[0]
 }

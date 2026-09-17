@@ -17,7 +17,7 @@ import { Settings } from '../components/Settings'
 import { Videos } from '../components/Videos'
 import { Diagnostics, type Environment } from '../components/Diagnostics'
 import { Focus, type FocusSnapshot } from '../components/Focus'
-import { buildMatchupPlan } from '../domain/matchup'
+import { buildMatchupPlans } from '../domain/matchup'
 
 const navigation = [
   { id: 'dashboard', label: 'Visão geral', icon: LayoutDashboard },
@@ -162,7 +162,7 @@ function Coach() {
   }
   async function openFocus() {
     if (busy) return
-    const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`), matchup: buildMatchupPlan(data.matches, demo) }
+    const snapshot: FocusSnapshot = { goal: data.goal, demo, notes: data.matches.filter(m => m.champion === 'Jax' && data.notes[m.id]?.trim()).slice(0, 3).map(m => `${m.champion} vs. ${m.opponent}: ${data.notes[m.id]}`), matchups: buildMatchupPlans(data.matches, demo) }
     try { if (desktop()) await invoke('open_focus', { snapshot }); else setFocus(snapshot) } catch (reason) { fail(reason) }
   }
   if (loadError) return <div className="startup"><h1>Seu histórico está protegido.</h1><p>{loadError}</p><button onClick={() => window.location.reload()}>Tentar novamente</button></div>
