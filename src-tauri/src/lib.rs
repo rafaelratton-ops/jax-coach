@@ -101,6 +101,7 @@ pub fn run() {
             riot::riot_test_connection,
             riot::riot_timeline,
             live::live_match_context,
+            live::live_safe_snapshot,
             live::live_diagnostics,
             media::scan_outplayed_directory,
             media::detect_environment,

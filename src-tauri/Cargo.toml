@@ -1,6 +1,6 @@
 [package]
 name = "jax-coach"
-version = "0.3.0"
+version = "0.4.0"
 description = "Coach pessoal local-first para League of Legends"
 authors = ["Jax Coach"]
 edition = "2021"

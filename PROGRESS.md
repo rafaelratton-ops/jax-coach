@@ -70,3 +70,11 @@
 - [x] Diagnóstico ganhou consulta manual e exportação dos endpoints locais (`allgamedata`, `gamestats`, jogador ativo, habilidades, runas, jogadores e eventos).
 - [x] Documentada a diferença entre API local documentada e aprovação para distribuição pública; nenhuma chave é incorporada ao app.
 - [x] 18 testes TypeScript + 4 testes Rust passaram após esta etapa; instalador Windows recompilado com a consulta local.
+
+## 2026-09-17 · acompanhamento seguro opcional · versão 0.4.0
+
+- [x] Modo Foco permite ativar e desligar manualmente o acompanhamento; a leitura resumida ocorre a cada 10 segundos enquanto o painel está aberto.
+- [x] O resumo mostra apenas fatos do League Client local: modo/tempo, seu campeão/nível/rota/itens/placar e o adversário da mesma rota quando identificável.
+- [x] O painel não recebe eventos, cooldowns, vida, ouro, runas ou dados brutos; nada é enviado para IA durante a partida.
+- [x] As sugestões exibem várias opções de treino históricas e deixam a escolha com o jogador; não há comando, input automático ou recomendação oculta.
+- [x] Documentação de compliance, guia para usuário leigo e instaladores atualizados.

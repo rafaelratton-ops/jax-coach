@@ -42,7 +42,7 @@ function planForOpponent(opponent: string, sampleSize: number, demo: boolean): M
   return {
     opponent,
     sampleSize,
-    sourceLabel: demo ? 'Exemplo fixo · ficha estática' : 'Amostra do seu histórico · ficha estática',
+    sourceLabel: demo ? 'Exemplo fixo · ficha estática' : sampleSize > 0 ? 'Amostra do seu histórico · ficha estática' : 'Base de treino · ficha estática',
     ...base,
   }
 }
